@@ -1,5 +1,5 @@
 ---
-title: "Multivariada II - Regress„o LogÌstica - Aula 1a"
+title: "Multivariada II - Regress√£o Log√≠stica - Aula 1a"
 author: "Prof. Juliano van Melis"
 date: "1 de outubro de 2017"
 output: html_document
@@ -9,27 +9,27 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE, cache=TRUE, autodep=TRUE)
 ```
 
-# Regress„o LogÌstica - Aula 01 - parte a
+# Regress√£o Log√≠stica - Aula 01 - parte a
 
-A execuÁ„o dessa primeira aula, com uma turma iniciante nos conceitos estatÌsticos e no uso do R, durou em torno de `6 horas`. As duas partes (`a` e `b`) foram dividas em `3 horas` e `3 horas` (antes e depois do almoÁo)
+A execu√ß√£o dessa primeira aula, com uma turma iniciante nos conceitos estat√≠sticos e no uso do R, durou em torno de `6 horas`. As duas partes (`a` e `b`) foram dividas em `3 horas` e `3 horas` (antes e depois do almo√ßo)
 
 Os **Conceitos** abordados foram:
 
-* IntroduÁ„o a Modelos Lineares Generalizados
-* Modelo de Regress„o LogÌstica - LOGIT  
+* Introdu√ß√£o a Modelos Lineares Generalizados
+* Modelo de Regress√£o Log√≠stica - LOGIT  
   + Elementos  do modelo LOGIT
   + Pressupostos do modelo LOGIT
-  + EstimaÁ„o do modelo LOGIT com o R
-  + InterpretaÁ„o do modelo LOGIT
-  + Ajuste do modelo
-  + Precis„o da estimativa (estatÌstica e gr·fica)
-  + An·lise da contribuiÁ„o dos previsores
-  + An·lise dos resÌduos
+  + Estima√ß√£o do modelo LOGIT com o R
+  + Interpreta√ß√£o do modelo LOGIT
+  + Ajuste do modelo 
+  + Precis√£o da estimativa (estat√≠stica e gr√°fica)
+  + An√°lise da contribui√ß√£o dos previsores
+  + An√°lise dos res√≠duos
 
-## InÌcio da aula
+## In√≠cio da aula
 
-A seguir, o ambiente de trabalho do R È preparado para a aula.
-Uso normalmente os pacotes `dplyr`,`tidyr`,`ggplot2` e `readxl` para facilitar a manipulaÁ„o do banco de dados. Os outros pacotes `broom`,`rms`,`pscl`,`car` e `pROC` ser„o ˙teis no decorrer da aula (maioria na parte 'b').
+A seguir, o ambiente de trabalho do R √© preparado para a aula.
+Uso normalmente os pacotes `dplyr`,`tidyr`,`ggplot2` e `readxl` para facilitar a manipula√ß√£o do banco de dados. Os outros pacotes `broom`,`rms`,`pscl`,`car` e `pROC` ser√£o √∫teis no decorrer da aula (maioria na parte 'b').
 
 ```{r eval=TRUE, echo=TRUE, collapse=T, results='hide',message=FALSE,warning=FALSE} 
 if(!require(dplyr)){install.packages("dplyr")}
@@ -39,49 +39,49 @@ if(!require(broom)){install.packages("broom")}
 ```
 
 
-## IntroduÁ„o aos modelos lineares generalizados
+## Introdu√ß√£o aos modelos lineares generalizados
 
-Quando pensamos em um Modelo Linear, pensamos em uma vari·vel resposta (dependente) *contÌnua* $Y$ em relaÁ„o a uma (ou mais) vari·vel independente explicativa $X1$.
+Quando pensamos em um Modelo Linear, pensamos em uma vari√°vel resposta (dependente) *cont√≠nua* $Y$ em rela√ß√£o a uma (ou mais) vari√°vel independente explicativa $X1$.
 
 $Y = \beta0 + \beta1*X1 + \epsilon$
 
-Olhando uma relaÁ„o cl·ssica e bem conhecida por exemplo È a relaÁ„o entre `hp` (cavalos de potÍncia, unidade: cavalos-vapor) e `mpg` (consumo de combustÌvel, unidade: milhas por gal„o) do banco de dados `mtcars`.
+Olhando uma rela√ß√£o cl√°ssica e bem conhecida por exemplo √© a rela√ß√£o entre `hp` (cavalos de pot√™ncia, unidade: cavalos-vapor) e `mpg` (consumo de combust√≠vel, unidade: milhas por gal√£o) do banco de dados `mtcars`.
 
 ```{r echo=FALSE}
 ggplot(mtcars,aes(x=hp,y=mpg))+
   geom_point(color="red")+
   geom_smooth(method='lm',fill='yellow')+
-  ylab("consumo (milhas por gal„o)")+xlab("cavalos de forÁa (10 bhp)")+
+  ylab("consumo (milhas por gal√£o)")+xlab("cavalos de for√ßa (10 bhp)")+
   theme_bw()
 ```
 
-E tal relaÁ„o apresenta o seguinte resumo do seu modelo linear:
+E tal rela√ß√£o apresenta o seguinte resumo do seu modelo linear:
 
 ```{r collapse=TRUE}
 (mod <- lm(mpg~hp,data=mtcars))
 
 ```
 
-Ou seja, a equaÁ„o desse modelo linear seria:
+Ou seja, a equa√ß√£o desse modelo linear seria:
 $$
 mpg = {30.1} -0.07*hp
 $$
 
 Com os valores de $\beta0$=30.098 e $\beta1$= -0.068
 
-Mas um modelo linear n„o deve terminar (ou continuar) sem a [avaliaÁ„o dos resÌduos  dessa relaÁ„o](https://pt.wikipedia.org/wiki/Regress%C3%A3o_linear_simples). Uma maneira muito r·pida e eficiente È fazermos essa avaliaÁ„o visualmente, observando os 4 gr·ficos a seguir, que levam em consideraÁ„o os resÌduos 
+Mas um modelo linear n√£o deve terminar (ou continuar) sem a [avalia√ß√£o dos res√≠duos  dessa rela√ß√£o](https://pt.wikipedia.org/wiki/Regress%C3%A3o_linear_simples). Uma maneira muito r√°pida e eficiente √© fazermos essa avalia√ß√£o visualmente, observando os 4 gr√°ficos a seguir, que levam em considera√ß√£o os res√≠duos 
 
 ```{r collapse=T}
 par(mfrow=c(2,2))
 plot(mod)
 ```
 
-Podemos perceber, por exemplo, que se retirarmos o [Maserati Bora](https://en.wikipedia.org/wiki/Maserati_Bora), pois È um carro muito potente fabricado nos anos 1970, dÈcada na qual os carros apresentavam alto consumo antes que esse tipo de motor n„o fosse mais economicamente vi·vel devido os [altos valores que o petrÛleo veio alcanÁar](https://upload.wikimedia.org/wikipedia/commons/b/b0/Crude_oil_prices_since_1861.png).
+Podemos perceber, por exemplo, que se retirarmos o [Maserati Bora](https://en.wikipedia.org/wiki/Maserati_Bora), pois √© um carro muito potente fabricado nos anos 1970, d√©cada na qual os carros apresentavam alto consumo antes que esse tipo de motor n√£o fosse mais economicamente vi√°vel devido os [altos valores que o petr√≥leo veio alcan√ßar](https://upload.wikimedia.org/wikipedia/commons/b/b0/Crude_oil_prices_since_1861.png).
 
-A ·rea em amarelo do gr·fico refere-se a um intervalo de confianÁa de `0.95` (95%) para cada intervalo de valor da vari·vel explicativa $X1$, no nosso caso: `hp`.
-Essa variaÁ„o faz com que a mÈdia de milhas percorridas por gal„o abastecido (`mpg`) caia conforme o valor do coeficiente calculado $\beta0$.
+A √°rea em amarelo do gr√°fico refere-se a um intervalo de confian√ßa de `0.95` (95%) para cada intervalo de valor da vari√°vel explicativa $X1$, no nosso caso: `hp`.
+Essa varia√ß√£o faz com que a m√©dia de milhas percorridas por gal√£o abastecido (`mpg`) caia conforme o valor do coeficiente calculado $\beta0$.
 
-Conforme um [tutorial publicado no site freakonometrics](http://freakonometrics.hypotheses.org/9593), podemos adaptar e construir uma funÁ„o para visualizarmos como ocorre essa mudanÁa da mÈdia conforme o nosso modelo linear entre duas vari·veis:
+Conforme um [tutorial publicado no site freakonometrics](http://freakonometrics.hypotheses.org/9593), podemos adaptar e construir uma fun√ß√£o para visualizarmos como ocorre essa mudan√ßa da m√©dia conforme o nosso modelo linear entre duas vari√°veis:
 
 ```{r collapse=T}
 plotar_curvas<-function(n=2,m=8,X,Y){
@@ -124,49 +124,49 @@ plotar_curvas<-function(n=2,m=8,X,Y){
 
 ```
 
-No qual observarÌamos a seguinte figura:
+No qual observar√≠amos a seguinte figura:
 
 ```{r collapse=TRUE}
 plotar_curvas(X = mtcars$hp, Y = mtcars$mpg)
 ```
 
-Dessa maneira h· a variaÁ„o linear da mÈdia
+Dessa maneira h√° a varia√ß√£o linear da m√©dia
 $$
 E(Y|X=x) = \beta0 +\beta1*x
 $$
 
-Com a vari‚ncia constante, seguindo uma distribuiÁ„o normal
+Com a vari√¢ncia constante, seguindo uma distribui√ß√£o normal
 $$
 Var(Y|X=x)= \sigma^2
 $$
 
-Mas e se quisermos saber se a relaÁ„o entre 'mpg' e uma outra vari·vel, como se o carro possui c‚mbio autom·tico ou manual (`am`):
+Mas e se quisermos saber se a rela√ß√£o entre 'mpg' e uma outra vari√°vel, como se o carro possui c√¢mbio autom√°tico ou manual (`am`):
 ```{r collapse=T, echo=FALSE}
 ggplot(mtcars,aes(y=am,x=mpg))+
   geom_point(color="red")+
   geom_smooth(method='lm',fill='yellow')+
   theme_classic()+
-  ylab("Manual - 0  ou Autom·tico - 1")+
-  xlab("Cavalos de potÍncia (10 bhp)")
+  ylab("Manual - 0  ou Autom√°tico - 1")+
+  xlab("Cavalos de pot√™ncia (10 bhp)")
 ```
 
 ```{r collapse=TRUE}
 (mod_linear <-lm(am~mpg, data=mtcars) )
 ```
 
-Mas observando os resÌduos:
+Mas observando os res√≠duos:
 ```{r collapse=TRUE, echo=FALSE}
 par(mfrow=c(2,2))
 plot(mod_linear)
 ```
 
-E observando como a vari·vel resposta (`am`) se comportam em relaÁ„o a uma vari·vel indenpendente (`mpg`), podemos concluir que o modelo linear como foi aplicado n„o È indicado, pois corrompe os pressupostos para a construÁ„o de um modelo linear, pois:
+E observando como a vari√°vel resposta (`am`) se comportam em rela√ß√£o a uma vari√°vel indenpendente (`mpg`), podemos concluir que o modelo linear como foi aplicado n√£o √© indicado, pois corrompe os pressupostos para a constru√ß√£o de um modelo linear, pois:
 
-* A vari·vel dpendente n„o segue uma distribuiÁ„o normal
-  + Ela È discreta (1 ou 0);
-  + … bimodal (moda diferente da mÈdia e da mediana)
-  + Ela segue uma distribuiÁ„o binomial  ($Y~Binomial(np, np(1-p)$)
-* ResÌduos n„o mostram aleatoriedade
+* A vari√°vel dpendente n√£o segue uma distribui√ß√£o normal
+  + Ela √© discreta (1 ou 0);
+  + √â bimodal (moda diferente da m√©dia e da mediana)
+  + Ela segue uma distribui√ß√£o binomial  ($Y~Binomial(np, np(1-p)$)
+* Res√≠duos n√£o mostram aleatoriedade
 * Heterocedasticidade dos dados
 
 
@@ -175,18 +175,18 @@ plotar_curvas(X = mtcars$mpg, Y = mtcars$am)
 ```
 
 
-Nesse caso, o melhor È usarmos um Modelo Linear Generalizado (*Generalized Linear Model - GLM*), pois podem ser usados para inferirmos uma vari·vel dependente (resposta $Y$ ) que n„o sigam uma distribuiÁ„o normal
+Nesse caso, o melhor √© usarmos um Modelo Linear Generalizado (*Generalized Linear Model - GLM*), pois podem ser usados para inferirmos uma vari√°vel dependente (resposta $Y$ ) que n√£o sigam uma distribui√ß√£o normal
 
-GLM consiste em trÍs componentes:
+GLM consiste em tr√™s componentes:
 * Componente estrutural (*structural component*): $\beta0 +\beta1*X1... $ 
-* FunÁ„o de ligaÁ„o (*link function*): $g(\mu)$
-* DistribuiÁ„o da vari·vel resposta (*response distribution*): Neste caso seria $Y \~ Binomial$
+* Fun√ß√£o de liga√ß√£o (*link function*): $g(\mu)$
+* Distribui√ß√£o da vari√°vel resposta (*response distribution*): Neste caso seria $Y \~ Binomial$
 
 $$
 g(\mu) = \beta0 + \beta0*Xg(\mu) = \beta0 + \beta1*X1...
 $$
 
-Outro detalhe importante È que ao invÈs de usar o mÈtodo de mÌnimos quadrados ([*Ordinary Least Squares - OLS*](https://en.wikipedia.org/wiki/Ordinary_least_squares)), GLM utiliza estimativa de verossimilhanÁa ([*Maximum Likelihood Estimation - MLE*](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)), o que modifica como calculamos o ajuste de um modelo.
+Outro detalhe importante √© que ao inv√©s de usar o m√©todo de m√≠nimos quadrados ([*Ordinary Least Squares - OLS*](https://en.wikipedia.org/wiki/Ordinary_least_squares)), GLM utiliza estimativa de verossimilhan√ßa ([*Maximum Likelihood Estimation - MLE*](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)), o que modifica como calculamos o ajuste de um modelo.
 
 ```{r collapse=TRUE}
 ggplot(mtcars,aes(x=mpg,y=am))+
@@ -194,28 +194,28 @@ ggplot(mtcars,aes(x=mpg,y=am))+
   geom_smooth(method='lm',aes(color="Modelo Linear"),se=F)+
   geom_smooth(method = "glm", method.args = list(family = "binomial"), aes(color="GLM Binomial"),se=F )+
   scale_y_discrete(limits=c(0,1))+
-  xlab("Consumo (milhas por gal„o)")+ylab("Manual - 0 / Autom·tico - 1")+
+  xlab("Consumo (milhas por gal√£o)")+ylab("Manual - 0 / Autom√°tico - 1")+
   theme_bw()+  geom_jitter(width=1,height=0)+
   scale_color_manual(name="", values=c("blue","red") )
 
 ```
 
 
-Portanto, verificar o ajuste de um modelo linear generalizado (GLM) n„o È mais possÌvel fazer na mesma maneira que fazemos com os modelos lineares (LMs):
-$R^2$ (para verificarmos ajuste) e `plot(mod)` (para verificarmos os resÌduos).
+Portanto, verificar o ajuste de um modelo linear generalizado (GLM) n√£o √© mais poss√≠vel fazer na mesma maneira que fazemos com os modelos lineares (LMs):
+$R^2$ (para verificarmos ajuste) e `plot(mod)` (para verificarmos os res√≠duos).
 
-## Regress„o LogÌstica
+## Regress√£o Log√≠stica
 
-Esse tipo de regress„o È muito interessante, pois È muito ˙til para inferirmos valores em que as vari·veis independentes (*explicativas*) tÍm e que levam a um ponto de *ruptura* para a nossa vari·vel dependente (*resposta*), pois a nossa vari·vel resposta sÛ apresenta dois valores (`1` ou `0`). Podemos entender esse tipo de resposta para alguns exemplos, como:
-* Compra ou n„o compra de um determinado item
-* Morte ou sobreviÍncia
-* FalÍncia ou sucesso de uma empresa
-* Risco no CrÈdito ou n„o
-* InfecÁ„o ou n„o
-* Ruptura do material ou n„o
+Esse tipo de regress√£o √© muito interessante, pois √© muito √∫til para inferirmos valores em que as vari√°veis independentes (*explicativas*) t√™m e que levam a um ponto de *ruptura* para a nossa vari√°vel dependente (*resposta*), pois a nossa vari√°vel resposta s√≥ apresenta dois valores (`1` ou `0`). Podemos entender esse tipo de resposta para alguns exemplos, como:
+* Compra ou n√£o compra de um determinado item
+* Morte ou sobrevi√™ncia
+* Fal√™ncia ou sucesso de uma empresa
+* Risco no Cr√©dito ou n√£o
+* Infec√ß√£o ou n√£o
+* Ruptura do material ou n√£o
 * Gol/cesta ou pra fora
 
-Como $p$ (probabilidade de sucesso) tem valores entre `0` e `1` ($0 \ge p \ge 1$), precisamos adequar a nossa equaÁ„o para a nossa vari·vel resposta.
+Como $p$ (probabilidade de sucesso) tem valores entre `0` e `1` ($0 \ge p \ge 1$), precisamos adequar a nossa equa√ß√£o para a nossa vari√°vel resposta.
 
 Portanto, para que $p \ge 0$:
 $$
@@ -227,7 +227,7 @@ $$
 p = \frac{exp(\beta0+\beta1*X1)}{1+exp(\beta0+\beta1*X1)} = \frac{e^{\beta0+\beta1*X1}}{1+e^{\beta0+\beta1*X1}}
 $$
 
- sendo que $p$ È igual a $\hat{y}$. E quando nos referimos a $p$ (ou $\hat{y}$), estamos nos referindo a uma **escala de probabilidade**, que È diferente de:
+ sendo que $p$ √© igual a $\hat{y}$. E quando nos referimos a $p$ (ou $\hat{y}$), estamos nos referindo a uma **escala de probabilidade**, que √© diferente de:
 
 * Escala de Chance (*Odd`s Scale*)
 $$
@@ -238,14 +238,14 @@ $$
 logit(\hat{y})=log(\frac{\hat{y}}{1-\hat{y}}) = \beta0+\beta1*X1
 $$
 
-Cada uma dessas escalas (de probabilidade, *PROBIT* e *LOGIT*) tem suas vantagens e desvantagens, e nÛs faremos uma an·lise comparativa posteriormente. Mas para fazermos a escolha entre as escalas ser· necess·rio uma combinaÁ„o de:
-  + Conhecimento da distribuiÁ„o da vari·vel resposta
-  + ConsideraÁıes teÛricas
-  + Ajuste empÌrico aos dados
+Cada uma dessas escalas (de probabilidade, *PROBIT* e *LOGIT*) tem suas vantagens e desvantagens, e n√≥s faremos uma an√°lise comparativa posteriormente. Mas para fazermos a escolha entre as escalas ser√° necess√°rio uma combina√ß√£o de:
+  + Conhecimento da distribui√ß√£o da vari√°vel resposta
+  + Considera√ß√µes te√≥ricas
+  + Ajuste emp√≠rico aos dados
 
-Mas um bom [material disponÌvel](http://medicinabaseadaemevidencias.blogspot.com.br/2010/10/o-que-significa-odds-ratio.html) pode ajudar a entender a diferenÁa entre probabilidade de um evento ($p$ ou $\hat{y}$) e chance ($odd$) de um evento.
+Mas um bom [material dispon√≠vel](http://medicinabaseadaemevidencias.blogspot.com.br/2010/10/o-que-significa-odds-ratio.html) pode ajudar a entender a diferen√ßa entre probabilidade de um evento ($p$ ou $\hat{y}$) e chance ($odd$) de um evento.
 
-### DiferenÁas gr·ficas entre probabilidades, PROBIT e LOGIT
+### Diferen√ßas gr√°ficas entre probabilidades, PROBIT e LOGIT
 
 ```{r collapse=TRUE}
 mod <- glm(am~mpg,mtcars,family = binomial('logit'))
@@ -259,29 +259,28 @@ ajuste <- mod %>%
 print(ajuste)
 ```
 
-Gr·fico da relaÁ„o entre $p$ e `mpg`. Perceba que o gr·fico È igual a curva da relaÁ„o GLM Binomial (e os valores variam de `0` a `1`).
+Gr√°fico da rela√ß√£o entre $p$ e `mpg`. Perceba que o gr√°fico √© igual a curva da rela√ß√£o GLM Binomial (e os valores variam de `0` a `1`).
 
 ```{r}
 ggplot(ajuste, aes(x = mpg, y = y_hat)) +
   geom_point() + geom_line() +
-  scale_y_continuous("Probabilidade de ser autom·tico")
+  scale_y_continuous("Probabilidade de ser autom√°tico")
 
 ```
 
-Gr·fico da relaÁ„o entre $odd$ e `mpg`, Perceba que a chance de ser autom·tico aumenta conforme aumentamos o valor de `mpg`, em uma relaÁ„o exponencial
+Gr√°fico da rela√ß√£o entre $odd$ e `mpg`, Perceba que a chance de ser autom√°tico aumenta conforme aumentamos o valor de `mpg`, em uma rela√ß√£o exponencial
 ```{r}
 ggplot(ajuste, aes(x = mpg, y = odds)) +
   geom_point() + geom_line() +
-  scale_y_continuous("Chance (PROBIT) de ser autom·tico")
-
+  scale_y_continuous("Chance (PROBIT) de ser autom√°tico")
 ```
 
-Gr·fico da relaÁ„o entre $log(odd)$ e `mpg`. Perceba que a relaÁ„o fica reta, mas com valores que n„o fazerm muito sentido para  $log(odd)$.
+Gr√°fico da rela√ß√£o entre $log(odd)$ e `mpg`. Perceba que a rela√ß√£o fica reta, mas com valores que n√£o fazerm muito sentido para  $log(odd)$.
 
 ```{r}
 ggplot(ajuste, aes(x = mpg, y = log_odds)) +
   geom_point() + geom_line() +
-  scale_y_continuous("log(chance) (LOGIT) de ser autom·tico")
+  scale_y_continuous("log(chance) (LOGIT) de ser autom√°tico")
 
 ```
 
@@ -291,11 +290,11 @@ Seguiremos os seguintes passos:
 
 **1.** Importar os dados;
 
-**2.** Fazer uma an·lise exploratÛria dos dados
+**2.** Fazer uma an√°lise explorat√≥ria dos dados
 
   + Verificar valores `NA` ou `NaN`
   + Verificar `outliers`
-  + Verificar se as vari·veis preditoras que utilizaremos n„o s„o altamente autocorrelacionadas
+  + Verificar se as vari√°veis preditoras que utilizaremos n√£o s√£o altamente autocorrelacionadas
 
 **3.** Construir dois grupos de dados (`treino` e `teste`)
   
@@ -304,16 +303,16 @@ Seguiremos os seguintes passos:
 **5.** Interpretar os coeficientes do modelo com os dados `treino`
 
 
-**6.** Analisar a contribuiÁ„o dos previsores 
+**6.** Analisar a contribui√ß√£o dos previsores 
 
-  + Sum·rio do modelo
-  + EstatÌstica Wald
-  + Intervalo de ConfianÁa dos coeficientes
+  + Sum√°rio do modelo
+  + Estat√≠stica Wald
+  + Intervalo de Confian√ßa dos coeficientes
 
-**7.** Analisar o modelo `treino` utilizando seus resÌduos
+**7.** Analisar o modelo `treino` utilizando seus res√≠duos
 
-  + An·lise Gr·fica de Modelo Marginal (*Marginal Model Plots*)
-  + An·lise gr·fica de Componentes +  ResÌduos e ResÌduos Parciais  (*Component + Residual (Partial Residual) Plots*)
+  + An√°lise Gr√°fica de Modelo Marginal (*Marginal Model Plots*)
+  + An√°lise gr√°fica de Componentes +  Res√≠duos e Res√≠duos Parciais  (*Component + Residual (Partial Residual) Plots*)
 
 
 **8.** Verificar o ajuste do modelo `treino`
@@ -321,11 +320,11 @@ Seguiremos os seguintes passos:
   + $Pseudo R^{2}$
   + $p-value$ de um teste $\chi^2$ com um modelo `nulo`
   + Curva ROC (*Receiver Operating Characteristic*) e AUC (*Area Under the Curve*)
-  + Tabela confus„o
+  + Tabela confus√£o
   + AIC (*Akaike Information Criteria*)
 
-**9.** Analisar a precis„o da estimativa com os prÛprios dados `treino` e com os dados `teste`
+**9.** Analisar a precis√£o da estimativa com os pr√≥prios dados `treino` e com os dados `teste`
 
-  + Tabela confus„o
+  + Tabela confus√£o
   
-Todas esses passos ser„o realizados e postados na segunda parte da aula (parte `b`), onde cada um desses passos ser„o explicados detalhadamente.
+Todas esses passos ser√£o realizados e postados na segunda parte da aula (parte `b`), onde cada um desses passos ser√£o explicados detalhadamente.
