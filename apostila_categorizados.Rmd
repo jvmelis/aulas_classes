@@ -1,0 +1,543 @@
+---
+title: "Análise de Dados Categorizados II - aula 05"
+author: "Prof Juliano"
+date: "31/03/2020"
+output: 
+  word_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require(tidyverse)){install.packages("tidyverse")}
+if(!require(broom)){install.packages("broom")}
+```
+
+Para essa apostila são utilizados os pacotes `tidyverse` e `broom`.
+
+## 1. Teste de Fisher
+
+Na aula em Laboratório, realizamos o Teste Exato de Fisher *na unha*, com os dados de *Uma senhora toma chá* da  seguinte forma:
+
+```{r}
+tabela<-data.frame(tomou_leite=c(3,1), tomou_cha=c(1,3))
+row.names(tabela)<-c("era_leite", "era_cha")
+tabela
+```
+
+Para colunas e linhas com valores fixos, ou seja, onde $n_{11}$ determina os valores das outras três células.
+
+$$P_{n_{1,1}}=\frac{\binom{n_{1+}}{n_{11}}\binom{n_{2+}}{n_{+1}-n_{11}}}{\binom{n}{n_{+1}}}$$
+Lembrando que:
+
+$$\binom{a}{b}= \frac{a!}{b!(a-b)!} $$
+Para testar $H_{0}$: independência, o p-valor é a soma das probabilidade hipergeométricas para os resutlados menos favoráveis para $H_1$ com os valores observados. Para $H_{1}$: $\Theta > 1$, dado os totais marginais, tabelas tendo valores maiores de $n_{11}$ também apresentam maiores razão de chance da amostra:
+
+$$\hat{\Theta}=\frac{n_{11}n_{22}}{n_{12}n_{21}}$$
+Portanto, provê evidências mais fortes em favor da hipótese alternativa. O p-valor equivale a probabilidade hipergeométrica da cauda direita, ou que $n_{11}$ é, ao menos, maior do que valor observado.
+
+Realizando a fórmula para o valor da *Senhora toma chá*, temos:
+
+```{r}
+n11 <- tabela[1,1]
+n12 <- tabela[1,2]
+n21 <- tabela[2,1]
+n22 <- tabela[2,2]
+n1total <- n11 + n12
+n2total <- n21 + n22
+ntotal1 <- n11 + n21
+ntotal <- sum(tabela)
+```
+
+Portanto, a probabilidade de que a *senhora* realizasse tal *chute* seria:
+
+```{r}
+p_acertar <- factorial(n1total)/
+  (factorial(n1total - n11)*factorial(n11))
+
+p_errar <- factorial(n2total)/
+  (factorial(n2total - (ntotal1 - n11))*factorial(ntotal1 - n11))
+
+p_possiveis <- factorial(ntotal)/
+  (factorial(n1total)*factorial(ntotal-n1total))
+  
+p_n11 <- (p_acertar*p_errar)/p_possiveis
+p_n11
+```
+
+Posteriormente, realizamos uma função para descobrirmos as possibilidades dentro de outros chutes, sendo:
+
+```{r}
+# construindo funcao
+
+p_nij <- function(i, j, tabela){
+  outrac <- ifelse(j==1, 2, 1)
+  outral <- ifelse(i==1, 2, 1)
+  nij <- tabela[i, j]
+  nio <- tabela[i, outrac]
+  noj <- tabela[outral, j]
+  noo <- tabela[outral, outrac]
+  nitotal <- nij + nio
+  nototal <- noj + noo
+  ntotalj <- nij + noj
+  ntotal <- sum(tabela)
+  p_acertar <- factorial(nitotal)/
+    (factorial(nitotal - nij)*factorial(nij))
+  p_errar <- factorial(nototal)/
+    (factorial(nototal - (ntotalj - nij))*factorial(ntotalj - nij))
+  p_possiveis <- factorial(ntotal)/
+    (factorial(nitotal) * factorial(ntotal - nitotal))
+  p_nij <- (p_acertar * p_errar) / p_possiveis
+  return(p_nij)
+}
+p_nij(i = 1, j = 1, tabela = tabela)
+```
+
+Considerando que os valores possiveis de $n_{11}$ = {0, 1, 2, 3, 4}, com os valores marginais iguais a 4, calculamos as probabilidades de $n_{11}$: 
+
+```{r}
+tabela <- data.frame(leite = c(0,4), cha = c(4,0))
+row.names(tabela)<-c("leite", "cha"); tabela
+P_0 <- p_nij(i = 1, j = 1, tabela = tabela)
+
+tabela <- data.frame(leite = c(1,3), cha = c(3,1))
+row.names(tabela)<-c("leite", "cha"); tabela
+P_1 <- p_nij(i = 1, j = 1, tabela = tabela)
+
+tabela <- data.frame(leite = c(2,2), cha = c(2,2))
+row.names(tabela) <- c("leite", "cha"); tabela
+P_2 <- p_nij(i = 1, j = 1, tabela = tabela)
+
+tabela<-data.frame(leite=c(3,1), cha=c(1,3))
+row.names(tabela)<-c("leite", "cha"); tabela
+P_3 <- p_nij(i = 1, j = 1, tabela = tabela)
+
+tabela<-data.frame(leite=c(4,0), cha=c(0,4))
+row.names(tabela)<-c("leite", "cha"); tabela
+P_4 <- p_nij(i = 1, j = 1, tabela = tabela)
+```
+Vendo a tabela com os valores possíveis de $n_{11}$, temos:
+
+```{r}
+data.frame(n11 =c(0:4),
+           P = c(P_0,P_1,P_2,P_3,P_4))
+```
+
+
+Portanto, a probabilidade de que ela acertasse 3 ou mais xícaras seria:
+
+```{r}
+P_3 + P_4
+```
+
+
+No R é possível realizar o teste exato de Fisher com a função `fisher.test()`, existindo três alternativas de testes: `alternative = "greater"`, `alternative = "less"` e `alternative = "two.sided"` (*default*):
+
+
+```{r}
+tabela<-data.frame(leite=c(3,1), cha=c(1,3))
+row.names(tabela)<-c("leite", "cha"); tabela
+```
+
+Se a *senhora* pode ter acertado 0, 1, 3 ou 4:
+
+```{r}
+fisher.test(tabela) # bicaudal
+```
+
+Que é igual a: 
+
+```{r}
+P_0 + P_1 +  P_3 + P_4
+```
+
+```{r}
+fisher.test(tabela, alternative = "greater") # tirar 3 ou 4
+```
+
+Que é igual a: 
+
+```{r}
+P_3 + P_4
+```
+
+E para alternativa ser menor do que 3:
+
+```{r}
+fisher.test(tabela, alternative = "less") # tirar 0, 1, 2 ou 3
+```
+
+Que é igual a: 
+
+```{r}
+P_0 + P_1 + P_2 + P_3
+```
+
+### Exercício 1
+
+Considerando dois tratamentos de câncer (`Cirurgia` e `Radioterapia`), foi verificado se o crescimento foi controlado ou não (`controlado` e `n_controlado`, respectivamente). Veja tabela:
+
+```{r}
+cancer <- data.frame(controlado = c(21, 15),
+                     n_controlado = c(2, 3))
+row.names(cancer)<-c("Cirurgia", "Radioterapia")
+cancer
+```
+
+
+#### a) Realize e interprete o resultado do Teste exato de Fisher, onde `alternative = "greater"`
+
+```{r}
+fisher.test(cancer, alternative = "greater") 
+```
+
+#### b) Realize e interprete o resultado do Teste exato de Fisher, onde `alternative = less`
+
+```{r}
+fisher.test(cancer, alternative ="less") 
+```
+
+#### c) Realize e interprete o resultado do Teste exato de Fisher, onde `alternative = two.sided`
+
+```{r}
+fisher.test(cancer, alternative = "two.sided")
+```
+
+#### d) Qual resultado você chega em relação aos tratamentos?
+
+
+## 2. Estimativa Bayesiana para medidas de associação
+
+Métodos Bayesianos são bem sinceros/diretos para estimativas de medidas de associação em tabelas de contingência. Podemos visualizar isso com duas amostras com distribuição binomial sumarizadas em uma tabela 2 x 2. Assumimos que o número de sucessos $Y_{1}$ na linha 1 tenha uma distribuição binomial com parâmetro $\pi_{1}$ para $n_{1}$ tentativas e $Y_{2}$ sucessos para linha 2, com distribuição binomial com parâmetro $\pi_{2}$ em $n_{2}$ tentativas.
+
+A abordagem conjugada Bayesiana usa distribuição *a priori* beta, onde $beta(\alpha_1,\beta_1)$, para $\pi_1$ e $beta(\alpha_2,\beta_2)$, para $\pi_2$. Comumente, todos os hiperparâmetros com valores iguais a 1 denotam uma distribuição uniforme (veja neste [site](https://seeing-theory.brown.edu/probability-distributions/index.html) a distribuição beta e *brinque* com os hiperparâmetros) ou iguais a 0.5 (*Priori* de [Jeffrey](https://alexanderetz.com/2015/07/25/understanding-bayes-updating-priors-via-the-likelihood/)). 
+A escolha de beta como a distribuição *a priori* leva em consideração uma distribuição beta a *posteriori*, sendo distribuição $beta(y_i+\alpha_1, n_i-y_i+\beta_i)$ para $\pi_i$ e $i = \{1,2\}$, a qual induz a uma distribuição *posteriori* das diferenças das proporções, relativo ao risco e razãode chance.
+
+Para construir intervalos *a posteriori* para essas medidas de associação e obter uma performance adequada, uma boa escolha é usar o *Priori* de Jeffrey.
+
+
+### Exemplo - Pequeno ensaio clínico
+
+Em muitos estudos bioméducis, ao tratarmos de uma doença temos a formação de dois grupos: um placebo (ou tratamento convecional) e o tratamento a ser testado. Ao final, verificamos se o tratamento experimental tende a ter uma resposta melhor do que o convencional. Traduzindo isso de maneira estatística, consideramos que a condição neutra (hipótese nula) é de que $\pi_1 < \pi_2$ e a alternativa é de que $\pi_1 > \pi_2$, onde p-valor é uma medida Bayesiana a posterior para $P(\pi_1 \le \pi_2)$, sendo que $\pi_1$ é probabilidade de sucesso do tratamento a ser testado (tratamento 1) e  $\pi_2$ é probabilidade de sucesso do tratamento convencional (tratamento 2).
+
+Com baixa amostragem, os resultados dependem fortemente da escolha da distribuição *a priori*. O exemplo que faremos será de um teste clínico que utilizou 11 pessoas para o novo tratamento, onde todas obtiveram sucesso e somente um paciente foi alocado ao tratamento convencional e não obteve sucesso. Logo, para o tratamento 1 = ($n_1 = y_1 = 11$) e para tratamento 2 = ($n_2 = 1, y_2 = 0$). A tabela 2 x 2 então fica:
+
+```{r}
+cancer <- data.frame(sucesso = c(11, 0),
+                     n_sucesso = c(0, 1))
+row.names(cancer)<-c("Trata_1", "Trata_convencional")
+cancer
+```
+
+Uma maneira simples de realizar a aproximação dos intervalos das medidas (razão de chance e diferenças nas proporções) é usando simulações, gerando uma grande quantidade de valores aleatórios (aqui usaremos `n = 100000`) de beta com medidas de $\pi_1$ e $\pi_2$ a posteriori.
+
+Como Probabilidades a priori para $\pi_1$ e $\pi_2$ segue $beta(0.5, 0.5)$:
+
+```{r}
+p_priori <- rbeta(100000, shape1 = 0.5, shape2 = 0.5)
+hist(p_priori)
+```
+
+
+A distribuição a posteriori sendo $beta(y_1+0.5, n_1 - y_1 + 0.5)$ para $\pi_1$ e $beta(y_2+0.5, n_2 - y_2 + 0.5)$ para $\pi_2$, logo, as simulações apresentarão os seguintes valores:
+
+```{r}
+pi_trata1 <- rbeta(100000, 
+                   shape1 = cancer[1,1] + 0.5, 
+                   shape2 = sum(cancer[1,]) - cancer[1,1] + 0.5) 
+pi_trata2 <- rbeta(100000,
+                   shape1 = cancer[2,1] + 0.5,
+                   shape2 = sum(cancer[2,]) - cancer[2,1] + 0.5)
+par(mfrow=c(1,2))
+hist(pi_trata1) #
+hist(pi_trata2) # 15/18
+```
+
+Portanto, temos que a razão de chance para cada simulação será (com intervalo de 95%):
+
+```{r}
+razao_chance <- pi_trata1*(1-pi_trata2)/((1-pi_trata1)*pi_trata2)
+round(quantile(razao_chance, 
+               c(0.025, 0.975)),3) # bicaudal 5% a posterior
+```
+
+Probabilidade posterior aproximada $P(\pi_1 < \pi_2)$ (controle melhor que o tratamento convencional):
+
+```{r}
+mean(pi_trata1 < pi_trata2)
+```
+
+A evidência é bem forte que o tratamento experimental é melhor que o tratamento convencional (p-valor ~ 0.005)
+
+
+### Exercício 2.
+
+Estudando a relação entre problemas psiquiátricos diagnosticandos (`Psicotico` ou `Neurotico`) e tendências suicidas (`Presente` e `Ausente`), o pesquisador encontrou os seguintes valores:
+
+```{r}
+suicidas <- data.frame(Psicotico = c(2, 18), 
+                       Neurotico = c(6, 14))
+rownames(suicidas) <-c("Presente", "Ausente")
+suicidas
+```
+
+Aplique uma estimativa bayesiana para medidas de associação, utilizando priori de Jeffrey, para verificar se as tendências suicidas são maiores em um paciente com quadro `Neurotico`.
+
+
+### Exercício 3
+
+Foi realizado um inventário entre homens e mulheres realizado a seguinte pergunta: *"Você acredita em vida após a morte?"*. Os dados se encontram abaixo:
+
+```{r}
+dados <- data.frame(acredito = c(859, 1230),
+                    nao_acredito = c(413, 357))
+rownames(dados) <- c("masculino", "feminino")
+dados
+```
+
+#### a) Trate os dados como amostras binomiais independentes, aplique uma estimativa bayesiana para medidas de associação, utilizando priori de Jeffrey (beta(0.5, 0.5)). Encontre a média das estimativas a posteriori das probabilidades de se acreditar em vida após a morte
+
+#### b) Encontre e interprete (i) o intervalo 95% para as diferenças das proporções e da razão de chance; (ii) a probabilidade a posteriori deu que as mulheres tem uma tendência maior de acreditar em vida após a morte do que homens.
+
+#### c) Realize um teste de independência utilizando $\chi^2$. Conclua sobre o teste de independência.
+
+#### d) Faça uma comparação entre a realização dos métodos usando estimativa bayesiana e frequentista ($\chi^2$). Os resultados foram diferentes? Qual abordagem mostra-se mais confiável? Por quê? 
+
+
+## 3. Regressão Logística
+
+### Fundamentos sobre Modelos Lineares
+
+Quando pensamos em um Modelo Linear, pensamos em uma variável resposta (dependente) *contínua* $Y$ em relação a uma (ou mais) variável independente explicativa $X1$.
+
+$Y = \beta0 + \beta1*X1 + \epsilon$
+
+Olhando uma relação clássica e bem conhecida por exemplo é a relação entre `hp` (cavalos de potência, unidade: cavalos-vapor) e `mpg` (consumo de combustível, unidade: milhas por galão) do banco de dados `mtcars`.
+
+```{r echo=FALSE,fig.cap= "Figura 1 - Relação entre consumo e motorização"}
+ggplot(mtcars,aes(x=hp,y=mpg))+
+  geom_point(color="red")+
+  geom_smooth(method='lm',fill='yellow')+
+  ylab("consumo (milhas por galão)")+xlab("cavalos de força (10 bhp)")+
+  theme_bw()
+```
+
+E tal relação apresenta o seguinte resumo do seu modelo linear:
+
+```{r collapse=TRUE}
+(mod <- lm(mpg~hp,data=mtcars))
+```
+
+Ou seja, a equação desse modelo linear seria:
+$$mpg = {30.1} -0.07*hp$$
+
+Com os valores de $\beta0$=30.098 e $\beta1$= -0.068
+
+Mas um modelo linear não deve terminar (ou continuar) sem a [avaliação dos resíduos  dessa relação](https://pt.wikipedia.org/wiki/Regress%C3%A3o_linear_simples). Uma maneira muito rápida e eficiente é fazermos essa avaliação visualmente, observando os 4 gráficos a seguir, que levam em consideração os resíduos 
+
+```{r collapse=T}
+par(mfrow=c(2,2))
+plot(mod)
+```
+
+Podemos perceber, por exemplo, que se retirarmos o [Maserati Bora](https://en.wikipedia.org/wiki/Maserati_Bora), pois é um carro muito potente fabricado nos anos 1970, década na qual os carros apresentavam alto consumo antes que esse tipo de motor não fosse mais economicamente viável devido os [altos valores que o petróleo veio alcançar](https://upload.wikimedia.org/wikipedia/commons/b/b0/Crude_oil_prices_since_1861.png).
+
+A área em amarelo da Figura 1 refere-se a um intervalo de confiança de `0.95` (95%) para cada intervalo de valor da variável explicativa $X1$, no nosso caso: `hp`.
+Essa variação faz com que a média de milhas percorridas por galão abastecido (`mpg`) caia conforme o valor do coeficiente calculado $\beta0$.
+
+Conforme um [tutorial publicado no site freakonometrics](http://freakonometrics.hypotheses.org/9593), podemos adaptar e construir uma função para visualizarmos como ocorre essa mudança da média conforme o nosso modelo linear entre duas variáveis:
+
+```{r collapse=T}
+plotar_curvas<-function(n=2,m=8,X,Y){
+  df <- data.frame(X,Y)
+  vX <- seq(min(X)-2,max(X)+2,length=n)
+  vY <- seq(min(Y)-2,max(Y)+2,length=n)
+  mat <- persp(vX,vY,matrix(0,n,n),zlim=c(0,.1),theta=-30,ticktype ="detailed", box = FALSE)
+  reggig <- glm(Y~X,data=df,family=gaussian(link="identity"))
+  x <- seq(min(X),max(X),length=501)
+  C=trans3d(x,predict(reggig,newdata=data.frame(X=x),type="response"),rep(0,length(x)),mat)
+  lines(C,lwd=2)
+  sdgig <- sqrt(summary(reggig)$dispersion)
+  x <- seq(min(X),max(X),length=501)
+  y1=qnorm(.95,predict(reggig,newdata=data.frame(X=x),type="response"), sdgig)
+  C <- trans3d(x,y1,rep(0,length(x)),mat)
+  lines(C,lty=2)
+  y2 <- qnorm(.05,predict(reggig,newdata=data.frame(X=x),type="response"), sdgig)
+  C <- trans3d(x,y2,rep(0,length(x)),mat)
+  lines(C,lty=2)
+  C <- trans3d(c(x,rev(x)),c(y1,rev(y2)),rep(0,2*length(x)),mat)
+  polygon(C,border=NA,col="yellow")
+  C <- trans3d(X,Y,rep(0,length(X)),mat)
+  points(C,pch=19,col="red")
+  vX <- seq(min(X),max(X),length=m)
+  mgig <- predict(reggig,newdata=data.frame(X=vX))
+  sdgig <- sqrt(summary(reggig)$dispersion)
+  for(j in m:1){
+    stp <- 251
+    x <- rep(vX[j],stp)
+    y <- seq(min(min(Y)-15,qnorm(.05,predict(reggig,newdata=data.frame(X=vX[j]),type="response"), sdgig)),max(Y)+15,length=stp)
+    z0 <- rep(0,stp)
+    z <- dnorm(y, mgig[j], sdgig)
+    C <- trans3d(c(x,x),c(y,rev(y)),c(z,z0),mat)
+    polygon(C,border=NA,col="light blue",density=40)
+    C <- trans3d(x,y,z0,mat)
+    lines(C,lty=2)
+    C <- trans3d(x,y,z,mat)
+    lines(C,col="blue")}
+}
+```
+
+No qual observaríamos a seguinte figura:
+
+```{r collapse=TRUE}
+plotar_curvas(X = mtcars$hp, Y = mtcars$mpg)
+```
+
+Dessa maneira há a variação linear da média
+$$
+E(Y|X=x) = \beta0 +\beta1*x
+$$
+
+Com a variância constante, seguindo uma distribuição normal
+$$
+Var(Y|X=x)= \sigma^2
+$$
+
+Mas e se quisermos saber se a relação entre 'mpg' e uma outra variável, como se o carro possui câmbio automático ou manual (`am`):
+
+```{r collapse=T, echo=FALSE}
+ggplot(mtcars,aes(y=am,x=mpg))+
+  geom_point(color="red")+
+  geom_smooth(method='lm',fill='yellow')+
+  theme_classic()+
+  ylab("Manual - 0  ou Automático - 1")+
+  xlab("Cavalos de potência (10 bhp)")
+```
+
+```{r collapse=TRUE}
+(mod_linear <-lm(am~mpg, data=mtcars) )
+```
+
+Mas observando os resíduos:
+```{r collapse=TRUE, echo=FALSE}
+par(mfrow=c(2,2))
+plot(mod_linear)
+```
+
+E observando como a variável resposta (`am`) se comportam em relação a uma variável indenpendente (`mpg`), podemos concluir que o modelo linear como foi aplicado não é indicado, pois corrompe os pressupostos para a construção de um modelo linear, pois:
+
+* A variável dpendente não segue uma distribuição normal
+  + Ela é discreta (1 ou 0);
+  + É bimodal (moda diferente da média e da mediana)
+  + Ela segue uma distribuição binomial  ($Y~Binomial(np, np(1-p)$)
+* Resíduos não mostram aleatoriedade
+* Heterocedasticidade dos dados
+
+
+```{r collapse=TRUE, echo=FALSE}
+plotar_curvas(X = mtcars$mpg, Y = mtcars$am)
+```
+
+
+Nesse caso, o melhor é usarmos um Modelo Linear Generalizado (*Generalized Linear Model - GLM*), pois podem ser usados para inferirmos uma variável dependente (resposta $Y$ ) que não sigam uma distribuição normal
+
+GLM consiste em três componentes:
+* Componente estrutural (*structural component*): $\beta_0 +\beta1*X_1... $ 
+* Função de ligação (*link function*): $g(\mu)$
+* Distribuição da variável resposta (*response distribution*): Neste caso seria $Y \~ Binomial$
+
+$$g(\mu) = \beta_0 + \beta_0*Xg(\mu) = \beta_0 + \beta_1*X_1...\beta_n*X_n$$
+
+Outro detalhe importante é que ao invés de usar o método de mínimos quadrados ([*Ordinary Least Squares - OLS*](https://en.wikipedia.org/wiki/Ordinary_least_squares)), GLM utiliza estimativa de verossimilhança ([*Maximum Likelihood Estimation - MLE*](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)), o que modifica como calculamos o ajuste de um modelo.
+
+```{r collapse=TRUE}
+ggplot(mtcars,aes(x=mpg,y=am))+
+  geom_point()+
+  geom_smooth(method='lm',aes(color="Modelo Linear"),se=F)+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), aes(color="GLM Binomial"),se=F )+
+  scale_y_discrete(limits=c(0,1))+
+  xlab("Consumo (milhas por galão)")+ylab("Manual - 0 / Automático - 1")+
+  theme_bw()+  geom_jitter(width=1,height=0)+
+  scale_color_manual(name="", values=c("blue","red") )
+```
+
+
+Portanto, verificar o ajuste de um modelo linear generalizado (GLM) não é mais possível fazer na mesma maneira que fazemos com os modelos lineares (LMs):
+$R^2$ (para verificarmos ajuste) e `plot(mod)` (para verificarmos os resíduos).
+
+### A Regressão Logística
+
+Esse tipo de regressão é muito interessante, pois é muito útil para inferirmos valores em que as variáveis independentes (*explicativas*) têm e que levam a um ponto de *ruptura* para a nossa variável dependente (*resposta*), pois a nossa variável resposta só apresenta dois valores (`1` ou `0`). Podemos entender esse tipo de resposta para alguns exemplos, como:
+* Compra ou não compra de um determinado item
+* Morte ou sobreviência
+* Falência ou sucesso de uma empresa
+* Risco no Crédito ou não
+* Infecção ou não
+* Ruptura do material ou não
+* Gol/cesta ou pra fora
+
+Como $p$ (probabilidade de sucesso) tem valores entre `0` e `1` ($0 \ge p \ge 1$), precisamos adequar a nossa equação para a nossa variável resposta.
+
+Portanto, para que $p \ge 0$:
+$$p = exp(\beta_0+\beta_1*X_1) = e^{\beta_0+\beta_1*X_1}$$
+
+E para que $p \le 1$:
+$$p = \frac{exp(\beta_0+\beta_1*X_1)}{1+exp(\beta_0+\beta_1*X_1)} = \frac{e^{\beta_0+\beta_1*X_1}}{1+e^{\beta_0+\beta_1*X_1}}$$
+
+ sendo que $p$ é igual a $\hat{y}$. E quando nos referimos a $p$ (ou $\hat{y}$), estamos nos referindo a uma **escala de probabilidade**, que é diferente de:
+
+* Escala de Chance (*Odd`s Scale*)
+
+$$probit(\hat{y})= \frac{\hat{y}}{1-\hat{y}}=exp(\beta_0+\beta_1*X_1) = e^{\beta_0+\beta_1*X_1}$$
+
+* Escala de Log da Chance (*Log-odd`s Scale*)
+
+$$logit(\hat{y})=log(\frac{\hat{y}}{1-\hat{y}}) = \beta_0+\beta1*X_1$$
+
+Cada uma dessas escalas (de probabilidade, *PROBIT* e *LOGIT*) tem suas vantagens e desvantagens, e nós faremos uma análise comparativa posteriormente. Mas para fazermos a escolha entre as escalas será necessário uma combinação de:
+  + Conhecimento da distribuição da variável resposta
+  + Considerações teóricas
+  + Ajuste empírico aos dados
+
+Mas um bom [material disponível](http://medicinabaseadaemevidencias.blogspot.com.br/2010/10/o-que-significa-odds-ratio.html) pode ajudar a entender a diferença entre probabilidade de um evento ($p$ ou $\hat{y}$) e chance ($odd$) de um evento.
+
+#### Diferenças gráficas entre probabilidades, PROBIT e LOGIT
+
+```{r collapse=TRUE}
+mod <- glm(am ~ mpg,mtcars,family = binomial('logit'))
+ajuste <- mod %>%
+  broom::augment(type.predict = "response") %>%
+  mutate(y_hat = .fitted) %>%  # Valores de probabilidade para cada observacao
+  mutate(odds = y_hat/(1-y_hat)) %>% # Valores de chance para cada observacao (PROBIT)
+  mutate(log_odds =log(odds)) %>%  # Valores de log(chance) para cada observacao (LOGIT)
+  select(am,mpg,y_hat,odds,log_odds)
+print(ajuste)
+```
+
+Gráfico da relação entre $p$ e `mpg`. Perceba que o gráfico é igual a curva da relação GLM Binomial (e os valores variam de `0` a `1`).
+
+```{r}
+ggplot(ajuste, aes(x = mpg, y = y_hat)) +
+  geom_point() + geom_line() +
+  scale_y_continuous("Probabilidade de ser automático")
+```
+
+Gráfico da relação entre $odd$ e `mpg`, Perceba que a chance de ser automático aumenta conforme aumentamos o valor de `mpg`, em uma relação exponencial
+
+```{r}
+ggplot(ajuste, aes(x = mpg, y = odds)) +
+  geom_point() + geom_line() +
+  scale_y_continuous("Chance (PROBIT) de ser automático")
+```
+
+Gráfico da relação entre $log(odd)$ e `mpg`. Perceba que a relação fica reta, mas com valores que não fazerm muito sentido para  $log(odd)$.
+
+```{r}
+ggplot(ajuste, aes(x = mpg, y = log_odds)) +
+  geom_point() + geom_line() +
+  scale_y_continuous("log(chance) (LOGIT) de ser automático")
+```
+
+### Exercício 4
+
+Quais diferenças existem ao realizarmos um GLM binomial que usa uma função de ligação PROBIT ao invés de LOGIT?

@@ -1,0 +1,90 @@
+---
+title: "apostila_logistica.Rmd"
+author: "Prof Juliano"
+date: "02/04/2020"
+output:
+  word_document: 
+    toc: true
+  html_document: 
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require(tidyverse)){iinstall.packages("tidyverse")}
+```
+
+## Realizando Regressão logística com GLM logit no R
+
+Os dados que utilizaremos será com dados disponíveis de [carangueijo-ferradura](https://pt.wikipedia.org/wiki/Limulidae)*, disponível no site stat.ufl.edu, página pessoal do Professor [Alan Agresti](http://users.stat.ufl.edu/~aa/).
+
+```{r}
+carang <- read.table("http://www.stat.ufl.edu/~aa/cat/data/Crabs.dat", header=TRUE)
+glimpse(carang)
+```
+
+Fonte: Jane Brockmann (University of Florida) e publicado em *Ethology* 102: 1–21 (1996).
+`crab` (id do carangueijo-ferradura): variável com números inteiros, numeração de 1 a 173;
+`sat` (satélite =  macho conectado a fêmea): variável com números inteiros;
+`y` (presença de satélite): `0`: não há macho conectado a fêmea, `1`: há ao menos um macho conectado a fêmea;
+`weight` (peso): variável com valores contínuos (em kg);
+`width` (largura): variável contínuo (em cm);
+`color` (cor do indivíduo): Variável fator onde `1`: claro-médio, `2`: médio, `3`: médio-escuro, `4`: escuro;
+`spine` (condição dos espinhos caudais): variável fator onde `1`: ambos inteiros, `2`: um quebrado, `3`: ambos quebrados; 
+
+* **Curiosidade**: Esse grupo de *"carangueijos"* (mais aparentado das aranhas e escorpiões do que dos carangueijos) é considerada um *fóssil vivo*, possui sangue de cor azul (rico em Cobre) que contém um tipo de célula (*Limulus* Amembocyte Lysate - LAL) que é utilizada para detectação de contaminação de material médico com potencial endotóxico.
+
+
+### Estimativa de tamanho amostral
+
+### Poder do teste 
+
+### Exercício 4
+
+### Exercício 5
+
+
+#### Modelo LOGIT com o R
+
+Seguiremos os seguintes passos:
+
+**1.** Importar os dados;
+
+**2.** Fazer uma análise exploratória dos dados
+
+  + Verificar valores `NA` ou `NaN`
+  + Verificar `outliers`
+  + Verificar se as variáveis preditoras que utilizaremos não são altamente autocorrelacionadas
+
+**3.** Construir dois grupos de dados (`treino` e `teste`)
+  
+**4.** Construir o modelo
+
+**5.** Interpretar os coeficientes do modelo com os dados `treino`
+
+
+**6.** Analisar a contribuição dos previsores 
+
+  + Sumário do modelo
+  + Estatística Wald
+  + Intervalo de Confiança dos coeficientes
+
+**7.** Analisar o modelo `treino` utilizando seus resíduos
+
+  + Análise Gráfica de Modelo Marginal (*Marginal Model Plots*)
+  + Análise gráfica de Componentes +  Resíduos e Resíduos Parciais  (*Component + Residual (Partial Residual) Plots*)
+
+
+**8.** Verificar o ajuste do modelo `treino`
+  
+  + $Pseudo R^{2}$
+  + $p-value$ de um teste $\chi^2$ com um modelo `nulo`
+  + Curva ROC (*Receiver Operating Characteristic*) e AUC (*Area Under the Curve*)
+  + Tabela confusão
+  + AIC (*Akaike Information Criteria*)
+
+**9.** Analisar a precisão da estimativa com os próprios dados `treino` e com os dados `teste`
+
+
+
+ Heart <- read.table("http://www.stat.ufl.edu/~aa/cat/data/Heart.dat",header=TRUE)
