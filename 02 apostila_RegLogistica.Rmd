@@ -1,0 +1,860 @@
+---
+title: "apostila_logistica.Rmd"
+author: "Prof Juliano"
+date: "02/04/2020"
+output:
+  html_document: 
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!require(tidyverse)){iinstall.packages("tidyverse")}
+```
+# 3. Regressão Logística
+
+## A. Fundamentos sobre Modelos Lineares
+
+Quando pensamos em um Modelo Linear, pensamos em uma variável resposta (dependente) *contínua* $Y$ em relação a uma (ou mais) variável independente explicativa $X1$.
+
+$Y = \beta0 + \beta1*X1 + \epsilon$
+
+Olhando uma relação clássica e bem conhecida por exemplo é a relação entre `hp` (cavalos de potência, unidade: cavalos-vapor) e `mpg` (consumo de combustível, unidade: milhas por galão) do banco de dados `mtcars`.
+
+```{r echo=FALSE,fig.cap= "Figura 1 - Relação entre consumo e motorização"}
+ggplot(mtcars,aes(x=hp,y=mpg))+
+  geom_point(color="red")+
+  geom_smooth(method='lm',fill='yellow')+
+  ylab("consumo (milhas por galão)")+xlab("cavalos de força (10 bhp)")+
+  theme_bw()
+```
+
+E tal relação apresenta o seguinte resumo do seu modelo linear:
+
+```{r collapse=TRUE}
+(mod <- lm(mpg~hp,data=mtcars))
+```
+
+Ou seja, a equação desse modelo linear seria:
+$$mpg = {30.1} -0.07*hp$$
+
+Com os valores de $\beta0$=30.098 e $\beta1$= -0.068
+
+Mas um modelo linear não deve terminar (ou continuar) sem a [avaliação dos resíduos  dessa relação](https://pt.wikipedia.org/wiki/Regress%C3%A3o_linear_simples). Uma maneira muito rápida e eficiente é fazermos essa avaliação visualmente, observando os 4 gráficos a seguir, que levam em consideração os resíduos 
+
+```{r collapse=T}
+par(mfrow=c(2,2))
+plot(mod)
+```
+
+Podemos perceber, por exemplo, que se retirarmos o [Maserati Bora](https://en.wikipedia.org/wiki/Maserati_Bora), pois é um carro muito potente fabricado nos anos 1970, década na qual os carros apresentavam alto consumo antes que esse tipo de motor não fosse mais economicamente viável devido os [altos valores que o petróleo veio alcançar](https://upload.wikimedia.org/wikipedia/commons/b/b0/Crude_oil_prices_since_1861.png).
+
+A área em amarelo da Figura 1 refere-se a um intervalo de confiança de `0.95` (95%) para cada intervalo de valor da variável explicativa $X1$, no nosso caso: `hp`.
+Essa variação faz com que a média de milhas percorridas por galão abastecido (`mpg`) caia conforme o valor do coeficiente calculado $\beta0$.
+
+Conforme um [tutorial publicado no site freakonometrics](http://freakonometrics.hypotheses.org/9593), podemos adaptar e construir uma função para visualizarmos como ocorre essa mudança da média conforme o nosso modelo linear entre duas variáveis:
+
+```{r collapse=T}
+plotar_curvas<-function(n=2,m=8,X,Y){
+  df <- data.frame(X,Y)
+  vX <- seq(min(X)-2,max(X)+2,length=n)
+  vY <- seq(min(Y)-2,max(Y)+2,length=n)
+  mat <- persp(vX,vY,matrix(0,n,n),zlim=c(0,.1),theta=-30,ticktype ="detailed", box = FALSE)
+  reggig <- glm(Y~X,data=df,family=gaussian(link="identity"))
+  x <- seq(min(X),max(X),length=501)
+  C=trans3d(x,predict(reggig,newdata=data.frame(X=x),type="response"),rep(0,length(x)),mat)
+  lines(C,lwd=2)
+  sdgig <- sqrt(summary(reggig)$dispersion)
+  x <- seq(min(X),max(X),length=501)
+  y1=qnorm(.95,predict(reggig,newdata=data.frame(X=x),type="response"), sdgig)
+  C <- trans3d(x,y1,rep(0,length(x)),mat)
+  lines(C,lty=2)
+  y2 <- qnorm(.05,predict(reggig,newdata=data.frame(X=x),type="response"), sdgig)
+  C <- trans3d(x,y2,rep(0,length(x)),mat)
+  lines(C,lty=2)
+  C <- trans3d(c(x,rev(x)),c(y1,rev(y2)),rep(0,2*length(x)),mat)
+  polygon(C,border=NA,col="yellow")
+  C <- trans3d(X,Y,rep(0,length(X)),mat)
+  points(C,pch=19,col="red")
+  vX <- seq(min(X),max(X),length=m)
+  mgig <- predict(reggig,newdata=data.frame(X=vX))
+  sdgig <- sqrt(summary(reggig)$dispersion)
+  for(j in m:1){
+    stp <- 251
+    x <- rep(vX[j],stp)
+    y <- seq(min(min(Y)-15,qnorm(.05,predict(reggig,newdata=data.frame(X=vX[j]),type="response"), sdgig)),max(Y)+15,length=stp)
+    z0 <- rep(0,stp)
+    z <- dnorm(y, mgig[j], sdgig)
+    C <- trans3d(c(x,x),c(y,rev(y)),c(z,z0),mat)
+    polygon(C,border=NA,col="light blue",density=40)
+    C <- trans3d(x,y,z0,mat)
+    lines(C,lty=2)
+    C <- trans3d(x,y,z,mat)
+    lines(C,col="blue")}
+}
+```
+
+No qual observaríamos a seguinte figura:
+
+```{r collapse=TRUE}
+plotar_curvas(X = mtcars$hp, Y = mtcars$mpg)
+```
+
+Dessa maneira há a variação linear da média
+$$
+E(Y|X=x) = \beta0 +\beta1*x
+$$
+
+Com a variância constante, seguindo uma distribuição normal
+$$
+Var(Y|X=x)= \sigma^2
+$$
+
+Mas e se quisermos saber se a relação entre 'mpg' e uma outra variável, como se o carro possui câmbio automático ou manual (`am`):
+
+```{r collapse=T, echo=FALSE}
+ggplot(mtcars,aes(y=am,x=mpg))+
+  geom_point(color="red")+
+  geom_smooth(method='lm',fill='yellow')+
+  theme_classic()+
+  ylab("Manual - 0  ou Automático - 1")+
+  xlab("Cavalos de potência (10 bhp)")
+```
+
+```{r collapse=TRUE}
+(mod_linear <-lm(am~mpg, data=mtcars) )
+```
+
+Mas observando os resíduos:
+```{r collapse=TRUE, echo=FALSE}
+par(mfrow=c(2,2))
+plot(mod_linear)
+```
+
+E observando como a variável resposta (`am`) se comportam em relação a uma variável indenpendente (`mpg`), podemos concluir que o modelo linear como foi aplicado não é indicado, pois corrompe os pressupostos para a construção de um modelo linear, pois:
+
+* A variável dpendente não segue uma distribuição normal
+  + Ela é discreta (1 ou 0);
+  + É bimodal (moda diferente da média e da mediana)
+  + Ela segue uma distribuição binomial  ($Y~Binomial(np, np(1-p)$)
+* Resíduos não mostram aleatoriedade
+* Heterocedasticidade dos dados
+
+
+```{r collapse=TRUE, echo=FALSE}
+plotar_curvas(X = mtcars$mpg, Y = mtcars$am)
+```
+
+
+Nesse caso, o melhor é usarmos um Modelo Linear Generalizado (*Generalized Linear Model - GLM*), pois podem ser usados para inferirmos uma variável dependente (resposta $Y$ ) que não sigam uma distribuição normal
+
+GLM consiste em três componentes:
+* Componente estrutural (*structural component*): $\beta_0 +\beta1*X_1...+ X_p $ 
+* Função de ligação (*link function*): $g(\mu)$
+* Distribuição da variável resposta (*response distribution*): Neste caso seria $Y \~ Binomial$
+
+$$g(\mu) = \beta_0 + \beta_0*Xg(\mu) = \beta_0 + \beta_1*X_1...\beta_p*X_p$$
+
+Outro detalhe importante é que ao invés de usar o método de mínimos quadrados ([*Ordinary Least Squares - OLS*](https://en.wikipedia.org/wiki/Ordinary_least_squares)), GLM utiliza estimativa de verossimilhança ([*Maximum Likelihood Estimation - MLE*](https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)), o que modifica como calculamos o ajuste de um modelo.
+
+```{r collapse=TRUE}
+ggplot(mtcars,aes(x=mpg,y=am))+
+  geom_point()+
+  geom_smooth(method='lm',aes(color="Modelo Linear"),se=F)+
+  geom_smooth(method = "glm", method.args = list(family = "binomial"), aes(color="GLM Binomial"),se=F )+
+  scale_y_discrete(limits=c(0,1))+
+  xlab("Consumo (milhas por galão)")+ylab("Manual - 0 / Automático - 1")+
+  theme_bw()+  geom_jitter(width=1,height=0)+
+  scale_color_manual(name="", values=c("blue","red") )
+```
+
+
+Portanto, verificar o ajuste de um modelo linear generalizado (GLM) não é mais possível fazer na mesma maneira que fazemos com os modelos lineares (LMs):
+$R^2$ (para verificarmos ajuste) e `plot(mod)` (para verificarmos os resíduos).
+
+## B. Modelando dados binomiais
+
+Esse tipo de regressão é muito interessante, pois é muito útil para inferirmos valores em que as variáveis independentes (*explicativas*) têm e que levam a um ponto de *ruptura* para a nossa variável dependente (*resposta*), pois a nossa variável resposta só apresenta dois valores (`1` ou `0`). Podemos entender esse tipo de resposta para alguns exemplos, como:
+* Compra ou não compra de um determinado item
+* Morte ou sobreviência
+* Falência ou sucesso de uma empresa
+* Risco no Crédito ou não
+* Infecção ou não
+* Ruptura do material ou não
+* Gol/cesta ou pra fora
+
+Como $p$ (probabilidade de sucesso) tem valores entre `0` e `1` ($0 \ge p \ge 1$), precisamos adequar a nossa equação para a nossa variável resposta.
+
+Portanto, para que $p \ge 0$:
+$$\hat\pi = exp(\beta_0+\beta_1*X_1) = e^{\beta_0+\beta_1*X_1} $$
+
+E para que $p \le 1$:
+$$\hat\pi = \frac{exp(\beta_0+\beta_1*X_1)}{1+exp(\beta_0+\beta_1*X_1)} = \frac{e^{\beta_0+\beta_1*X_1}}{1+e^{\beta_0+\beta_1*X_1}} $$
+
+ sendo que $\hat\pi$ é igual a $\hat{y}$. E quando nos referimos a $\hat\pi$ (ou $\hat{y}$), estamos nos referindo a uma **escala de probabilidade**, que é diferente de:
+
+* Escala de Chance (*Odd`s Scale*)
+
+$$probit(\hat{y})= \frac{\hat{y}}{1-\hat{y}}=exp(\beta_0+\beta_1*X_1) = e^{\beta_0+\beta_1*X_1}$$
+
+* Escala de Log da Chance (*Log-odd`s Scale*)
+
+$$logit(\hat{y})=log(\frac{\hat{y}}{1-\hat{y}}) = \beta_0+\beta1*X_1$$
+
+Cada uma dessas escalas (de probabilidade, *PROBIT* e *LOGIT*) tem suas vantagens e desvantagens, e nós faremos uma análise comparativa posteriormente. Mas para fazermos a escolha entre as escalas será necessário uma combinação de:
+  + Conhecimento da distribuição da variável resposta
+  + Considerações teóricas
+  + Ajuste empírico aos dados
+
+Mas um bom [material disponível](http://medicinabaseadaemevidencias.blogspot.com.br/2010/10/o-que-significa-odds-ratio.html) pode ajudar a entender a diferença entre probabilidade de um evento ($p$ ou $\hat{y}$) e chance ($odd$) de um evento.
+
+## C. Diferenças gráficas entre probabilidades, PROBIT e LOGIT
+
+```{r collapse=TRUE}
+mod <- glm(am ~ mpg, mtcars,family = binomial('logit'))
+ajuste <- mod %>%
+  broom::augment(type.predict = "response") %>%
+  mutate(y_hat = .fitted) %>%  # Valores de probabilidade para cada observacao
+  mutate(odds = y_hat/(1-y_hat)) %>% # Valores de chance para cada observacao (PROBIT)
+  mutate(log_odds =log(odds)) %>%  # Valores de log(chance) para cada observacao (LOGIT)
+  dplyr::select(am,mpg,y_hat,odds,log_odds)
+head(ajuste)
+```
+
+Gráfico da relação entre $p$ e `mpg`. Perceba que o gráfico é igual a curva da relação GLM Binomial (e os valores variam de `0` a `1`).
+
+```{r}
+ggplot(ajuste, aes(x = mpg, y = y_hat)) +
+  geom_point() + geom_line() +
+  scale_y_continuous("Probabilidade de ser automático")
+```
+
+Gráfico da relação entre $odd$ e `mpg`, Perceba que a chance de ser automático aumenta conforme aumentamos o valor de `mpg`, em uma relação exponencial
+
+```{r}
+ggplot(ajuste, aes(x = mpg, y = odds)) +
+  geom_point() + geom_line() +
+  scale_y_continuous("Chance (PROBIT) de ser automático")
+```
+
+Gráfico da relação entre $log(odd)$ e `mpg`. Perceba que a relação fica reta, mas com valores que não fazerm muito sentido para  $log(odd)$.
+
+```{r}
+ggplot(ajuste, aes(x = mpg, y = log_odds)) +
+  geom_point() + geom_line() +
+  scale_y_continuous("log(chance) (LOGIT) de ser automático")
+```
+
+### Exercício 1 - LOGIT vs PROBIT
+
+Quais diferenças existem ao realizarmos um GLM binomial que usa uma função de ligação PROBIT ao invés de LOGIT?
+
+## D. Realizando Regressão logística com GLM LOGIT no R
+
+Os dados que utilizaremos será com dados disponíveis de [carangueijo-ferradura](https://pt.wikipedia.org/wiki/Limulidae)*, disponível no site stat.ufl.edu, página pessoal do Professor [Alan Agresti](http://users.stat.ufl.edu/~aa/).
+
+```{r}
+carang <- read.table("http://www.stat.ufl.edu/~aa/cat/data/Crabs.dat", header=TRUE)
+glimpse(carang)
+```
+
+Fonte: Jane Brockmann (University of Florida) e publicado em *Ethology* 102: 1–21 (1996).
+`crab` (id do carangueijo-ferradura): variável com números inteiros, numeração de 1 a 173;
+`sat` (satélite =  macho conectado a fêmea): variável com números inteiros;
+`y` (presença de satélite): `0`: não há macho conectado a fêmea, `1`: há ao menos um macho conectado a fêmea;
+`weight` (peso): variável com valores contínuos (em kg);
+`width` (largura): variável contínuo (em cm);
+`color` (cor do indivíduo): Variável fator onde `1`: claro-médio, `2`: médio, `3`: médio-escuro, `4`: escuro;
+`spine` (condição dos espinhos caudais): variável fator onde `1`: ambos inteiros, `2`: um quebrado, `3`: ambos quebrados; 
+
+* **Curiosidade**: Esse grupo de *"carangueijos"* (mais aparentado das aranhas e escorpiões do que dos carangueijos) é considerada um *fóssil vivo*, possui sangue de cor azul (rico em Cobre) que contém um tipo de célula (*Limulus* Amembocyte Lysate - LAL) que é utilizada para detectação de contaminação de material médico com potencial endotóxico.
+
+
+```{r}
+mod_logit <- glm(y ~ width, family = binomial('logit'), data=carang)
+```
+
+Entendendo o `summary()`
+
+```{r}
+summary(mod_logit)
+```
+
+Logo, a equação é:
+
+$$logit[\hat{\pi}(x)] = -12.3508 +0.4972*width$$
+
+onde:
+
+$$\hat{\pi}(x) = \frac{exp(-12.3508 +0.4972*width)}{1+exp(-12.3508 +0.4972*width )}$$
+
+Vendo a curva ajustada:
+
+```{r}
+ggplot(carang, aes(x = width, y = y))+
+  geom_jitter(height = .02, width = 0)+theme_bw()+
+  geom_smooth(method = 'glm', method.args = list(family='binomial'))
+```
+
+Pensando em um carangueijo grande (maior valor de diâmetro `width`):
+
+```{r}
+maior <- max(carang$width)
+maior
+width <- maior
+exp(-12.3508 +0.4972*width)/(1+exp(-12.3508 +0.4972*width))
+```
+
+Portanto, a probabilidade de que o carangueijo de **maior** porte (`r maior` cm) tenha ao menos um satélite é de 0.987 (98.7%).
+No carangueijo de menor tamanho, teríamos:
+
+```{r}
+menor <- min(carang$width)
+menor
+width <- menor
+p_menor <- exp(-12.3508 +0.4972*width)/(1+exp(-12.3508 +0.4972*width))
+p_menor
+```
+
+Portanto, a probabilidade de que o carangueijo de **menor** porte (`r menor` cm) ao menos um satélite é de 0.129 (12.9%)
+
+Dessa maneira, podemos ver que a largura do carangueijo fêmea é um fator que parece ser determinante para que ela apresente algum satélite.
+
+Como seria o acréscimo de `1 cm` na probabilidade de uma fêmea pequena em apresentar satélite?
+
+Realizando:
+
+```{r}
+menor_mais1 <- min(carang$width)+1
+width <- menor_mais1
+p_menor_mais1 <- exp(-12.3508 +0.4972*width)/(1+exp(-12.3508 +0.4972*width))
+p_menor_mais1
+```
+
+Sendo assim, a **chance** de que uma fêmea de `r menor` tenha um satélite é igual:
+
+$$chance = \frac{P(ter|wdith=21)}{P(nao|wdith=21)} = \frac{0.129}{1-0.129} = 0.148$$
+
+```{r}
+p_menor/(1-p_menor)
+```
+
+Podemos interpretar como: "a chance de uma fêmea **ter** ao menos um satélite  é cerca  de 85% menor (1 - 0.148) do que **não ter** um satélite." Assim sendo, a chance para uma fêmea de menor tamanho (`width = 21` cm) é ela **não ter** um satélite, Se as probabilidades fossem iguais (`p_menor = (1 - p_menor)`), teríamos uma chance igual a `1`. 
+
+Já a **chance** de que uma fêmea de `r menor_mais1` tenha um satélite é igual a:
+
+
+$$chance = \frac{P(ter|wdith=22)}{P(nao|wdith=22)} = \frac{0.1958}{1-0.1958} = 0.243$$
+
+```{r}
+p_menor_mais1/(1-p_menor_mais1)
+```
+
+Assim sendo, o aumento de 1 cm, aumenta em uma razão de `r 0.243558/0.1481396` na chance de apresentar um satélite, pois:
+
+```{r}
+chance_mais1 <- p_menor_mais1/(1-p_menor_mais1)
+chance_menor <- p_menor/(1-p_menor)
+OR <- chance_mais1/chance_menor
+OR
+```
+Isso é chamada de **Razão de Chance** (*Odd's Ratio: OR*), sendo cerca de 64% maior a chance de que uma fêmea com 1 cm maior tenha ao menos um satélite.
+A **Razão de Chances** (*Odds Ratio*) em relação a duas medidas com 1 unidade de diferença é igual ao $exp(\hat{\beta})$:
+
+```{r}
+beta_hat <- coef(mod_logit)[2]
+exp(beta_hat)
+```
+### Exercício 2 - Interpretar PROBIT
+
+#### a)
+Utilize a mesma relação, mas desta vez utilize dentro da função `glm()` o argumento `family=binomial('probit')`
+
+```{r}
+mod_probit <- glm(y ~ width, family = binomial('probit'), data=carang)
+```
+
+#### b)
+Interprete o modelo e compare com o modelo logit (`mod_logit`).
+
+#### c)
+Qual é o significado de $\beta_1$ neste modelo? Interprete utilizando a função `qnorm()`.
+
+
+## E. Valores ajustados e Intervalo de confiança para as Probabilidades
+
+Os Parâmetros do modelo são testados utilizando Método de Wald e Razão de Verossimilhança (Ver **GLM**).
+
+De modo geral, com aumento de $n$, temos o diminuição do erro padrão (*Standard Errors*) dos parâmetros.
+
+O cálculo do parâmetro $\beta$
+
+($logit[\pi(x)]=\alpha+\beta*x$) 
+
+segue: $$\hat{\beta}\pm z_{\alpha/2}(SE)$$.
+
+Portanto, olhando novamente o `summary` de `mod_logit`, vemos que:
+
+```{r}
+summary(mod_logit)
+```
+
+Sendo então que $\hat\beta$ tem $SE$ de 0.102, o intervalo de confiança (95%) para estatística Wald será:
+
+$$0.4972 \pm (1.96)*(0.102) = 0.4972 \pm 0.1999 = [0.2973 , 0.6971] $$
+
+```{r}
+0.4972 +(1.96)*(0.102)
+```
+
+Vendo um intervalo de confiança de 95%, mas com perfil de verossimilhança é de:
+
+```{r}
+confint(mod_logit)
+```
+
+Esses valores são distintos, pois o intervalo de confiança baseado na normalidade assintótica do estimador de máxima verossimilhança é dado por:
+
+$$\hat{\pi} - z_{\alpha/2}\sqrt{I(\hat{\pi})},  \hat{\pi} + z_{\alpha/2}\sqrt{I(\hat{\pi})} $$
+Onde: 
+
+$$I(\hat{\pi}) = \frac{n}{\hat\pi(1-\hat\pi)}$$
+
+## F. A abordagem de verossimilhança
+
+Algo verossímil (em inglês: *likely*), de onde vem o termo *verossimilhança* (inglês: *likelihoood*) é algo que é possível ou provável por não contrariar com as evidências dadas. Podemos entender algo verossímil como algo plausível.
+
+Dada uma variável $X$, ela pode ter o seu comportamento confrontado entre duas hipóteses:
+
+* Hipótese $H_a$, onde a observação $X=x$ seria observada com probabilidade $p_a(x)$
+
+* Hipótese $H_b$, onde a observação $X=x$ seria observada com probabilidade $p_b(x)$
+
+Verificamos a **força da evidência** em favor de uma hipótese ou outra observando a **razão de verossimilhança**. Ou seja, vemos uma razão das probabilidades e vemos para qual hipótese é mais plausível:
+
+$$\frac{p_a(x)}{p_b(x)}$$
+Se a razão das probabilidades (não é chance!) for maior do que 1, $p_a(x)$ é maior do que $p_b(x)$, então podemos considerar que $H_a$ é mais **verossímil** do que $H_b$. Se a razão for menor do que 1, $H_b$ é mais verossímil. 
+
+A **Função de verossimilhança** (em inglês [likelihood function](https://en.wikipedia.org/wiki/Likelihood_function)) mede a qualidade do ajuste de modelos para dados amostrais com parâmetros desconhecidos.
+
+Ou seja, considere uma variável aleatória $X$ com função de densidade $f_X(x; \theta)$, onde: $x$ é uma variável que descreve os valores que $X$ pode assumir e $\theta$ indica os parâmetros que controlam o comportamento de $X$.
+
+Saiba que no *mundo real*, nunca temos certeza sobre os valores dos parâmetros ($\theta$), mas contamos com os valores observados ($x$). 
+
+Assim, uma função de densidade pode ser utilizada onde o valor da observação $X=x$ é conhecido e estimar os parâmetros. Essa é **função de verossimilhança**:
+
+$$\mathcal{L}(\theta|X=x) = f_X(\theta|X=x)$$
+Dessa maneira, mantemos os valores observados como constantes ($X=x$) e os parâmetros ($\theta$) vão variando, apresentando diferentes valores de Verossimilhança.
+
+Vamos utilizar os valores de presença de satélites nas fêmeas de *Limulus*. A presença dos satélites segue uma binomial ($y \sim  Binomial(n, \pi)$), sendo $n$ o número de experimentos independentes e $\pi$ a probabilidade de sucesso.
+
+No exemplo dos *Limulus*, verificamos quantas fêmeas existem ($n$)e quantas apresentaram satélites ($n\pi$).  
+```{r}
+with(carang, table(y))
+```
+
+Temos `r 62+111` fêmeas amostradas, onde 111 apresentaram satélites. Descrevendo isso em uma curva (`curve()`, que usa os argumentos `from` e `to` para descrever os valores de um `x` em uma função) em uma função de densidade da distribuição binomial (`dbinom()`), que usa os argumentos `x` (número de sucessos), `size` (tamanho amostral) e `p` (que é igual ao `x` da função `curve()` que usa os valores de `0` a `1`).
+
+```{r}
+curve(dbinom(x = 111, size = (62+111), p = x), from = 0, to = 1)
+```
+
+Esse é um gráfico de verossimilhança para o parâmetro $\pi$, descrevendo uma curva de plausibilidade para valores de $\pi$ que variaram de 0 a 1. O pico aponta o valor de **máxima verossimilhança**.
+
+Para encontrarmos esse valor, podemos calcular da seguinte maneira:
+
+```{r}
+theta <- seq(from = 0, to = 1, length=10000)
+likelihood <- dbinom(x = 111, size = (62+111), p = theta)
+theta_hat <- theta[likelihood == max(likelihood)]
+theta_hat
+```
+
+Podemos colocar no gráfico o ponto máximo:
+
+```{r}
+dados<-data.frame(likelihood , theta)
+ggplot(dados, aes(y=likelihood, x=theta ))+geom_line()+
+  geom_vline(xintercept = theta_hat, color="red")+theme_classic()+
+  annotate(geom="text", x=theta_hat+0.02, y=0.02, label=quote(hat(theta)), size=8, color="red")
+```
+
+A função de verossimilhança descreve uma hipersuperfície no qual o pico (se existir) representa a combinação dos parâmetros de um modelo que maximiza a probabilidade de desenhar a amostra obtida.
+
+Quando fazemos uma estimativa baseada em uma função de verossimilhança para modelos com mais do que um parâmetro, podemos ter uma **hipersuperfície do valor de verossimilhança**:
+
+[!Hipersuperfície do valor logaritmizado da Verossimilhança](https://www.weibull.com/hotwire/issue9/rb9_10.gif)
+
+Os valores na base são relativos aos parâmetros do modelo, a altura é relativa aos valores das probabilidades de verossimilhança são logaritimizados (função log-verossimilhança, em inglês: *log-likelihood function*). 
+[Fonte](https://www.weibull.com/hotwire/issue9/relbasics9.htm)
+
+Ver a hipersuperfície é útil pois o formato e a curvatura dela é um bom indicativo da estabilidade das estimativas.
+
+
+Devemos lembrar que o valor de $\hat{\theta}$ encontrado é para somente uma amostra. Se tivermos várias amostras, podemos calcular diferentes valores de $\hat{\theta}$.
+
+No exemplo abaixo, construíremos 4 gráficos, com 10 aleatorizações cada (em preto). Essa aleatorização é dada com `1000` valores aleatórios em uma distribuição binomial com $\pi = \hat{\theta}$. Ou seja: ($y \sim  Binomial(n, \pi)$), onde $n = 1$, e $\pi = \hat{\theta}$ em 1000 aleatorizações.
+Posteriormente, são estabelecidas curvas baseadas em função de densidade da distribuição binomial, onde na função R (`dbinom()`) tem os argumentos `x` (sucessos), `size` (tamanho) e `p`. As funções R que começam com `d` (e.g. `dbinom()`, `dpois()`, *etc*... Ver: [link](http://www.leg.ufpr.br/Rpira/Rpira/node7.html) ) nos retorna os valores de probabilidade resultantes de uma distribuição binomial com o parâmetro $\pi$ variando em relação a `x`.
+
+A fórmula da função da Distribuição binomial é:
+
+$$P(Y = j) = \binom{n}{j}p^{j}(1-p)^{n-j}$$
+
+Logo, se é escrito na função R `dbinom(x= 100, size = 1000, p = 0.1)`, é calculado os valores de $P(Y = 100)$, logo:
+
+$$P(Y = 100) = \binom{1000}{100}0.1^{100}(1-0.1)^{1000-100} = $$
+
+```{r}
+choose(1000, 100)*
+  0.1^(100)*
+  (1-0.1)^(1000-100)
+```
+
+  A função `choose(n, j)` executa um binômio de newton: $\binom{n}{j}$ 
+
+Que é igual a:
+
+```{r}
+dbinom(100, 1000, 0.1)
+```
+
+Mas quando colocamos `dbinom(x= 100, size = 1000, p = x)`, é estabelecido que o segundo `x` apresentará valores 0 a 1 (uma função interna), para assim construirmos um gráfico com curva (usando a função R `curve()`):
+
+```{r}
+curve(dbinom(x = 100, size = 1000, p = x), xlab=expression(pi), ylab="", col="red")
+```
+
+Usando os valores observados de `carang`, podemos gerar as seguintes curvas, com `bootstrap`:
+
+
+```{r}
+aleatorizacoes <- 10
+par(mfrow=c(2,2))
+# Figura 1: 10 aleatorizacoes
+curve(dbinom(x = 111, size = (62+111), p = x), xlab=expression(pi), ylab="", col="red")
+for (i in 1:aleatorizacoes) {
+  bootBinom <- rbinom(1000, size=1, p= theta_hat)# usando mle para gerar dados baseado em theta_hat
+  curve(dbinom(x = sum(bootBinom), size = length(bootBinom), p = x), add=TRUE)
+}
+# Figura 2: + 10 aleatorizacoes
+curve(dbinom(x = 111, size = (62+111), p = x), xlab=expression(pi), ylab="", col="red")
+for (i in 1:aleatorizacoes) {
+  bootBinom <- rbinom(1000, size=1, p= theta_hat)# usando mle para gerar dados baseado em theta_hat
+  curve(dbinom(x = sum(bootBinom), size = length(bootBinom), p = x), add=TRUE)
+}
+# Figura 3: + 10 aleatorizacoes
+curve(dbinom(x = 111, size = (62+111), p = x), xlab=expression(pi), ylab="", col="red")
+for (i in 1:aleatorizacoes) {
+  bootBinom <- rbinom(1000, size=1, p= theta_hat)# usando mle para gerar dados baseado em theta_hat
+  curve(dbinom(x = sum(bootBinom), size = length(bootBinom), p = x), add=TRUE)
+}
+# Figura 4: + 10 aleatorizacoes
+curve(dbinom(x = 111, size = (62+111), p = x), xlab=expression(pi), ylab="", col="red")
+for (i in 1:aleatorizacoes) {
+  bootBinom <- rbinom(1000, size=1, p= theta_hat)# usando mle para gerar dados baseado em theta_hat
+  curve(dbinom(x = sum(bootBinom), size = length(bootBinom), p = x), add=TRUE)
+}
+```
+
+Cada curva apresenta uma randomização com os valores de $\pi = \hat{\theta}$. Com isso, podemos criar um **intervalo de verossimilhança** pelo método de *bootstrap*:
+
+```{r}
+aleatorizacoes <- 1000
+deltaHat <- numeric(aleatorizacoes)
+# loop principal
+for (i in 1:aleatorizacoes) {
+  bootBinom <- rbinom(1000, size=1, p= theta_hat)# usando mle para gerar dados baseado em theta_hat
+  thetaStar <- sum(bootBinom)/length(bootBinom)  # estimando theta medio de uma aleatorizacao
+  deltaHat[i] <- thetaStar - theta_hat           # diferenca entre thetaStar(aletorio) e theta_hat(estimado)
+}
+c(theta_hat, theta_hat) - quantile(deltaHat, c( .975,.025))
+```
+
+[Fonte](https://rpubs.com/ergz/124693)
+
+Portanto, pelo método de *bootstrap*, com um intervalo de confiança de 95%, o valor de $\hat{\Theta}$ é entre 61.33% a 67.23%.
+
+
+O valor de $\hat{\theta}$ foi para essa amostra. Mas vamos supor que temos amostras diferentes, com $\hat{\theta}$ estimados para $\pi$ diferentes. Vamos supor que ao invés de 111 em (62+111) de fêmeas com satélites, tivéssemos amostras com 100, 105, 110 e 115 fêmeas com satélites. Cada amostra pode ter uma curva de verossimilhança, sendo construída a seguir:
+
+
+```{r}
+curve(dbinom(x = 100, size = (62+111), p = x), xlab=expression(pi), ylab="likelihood", col="red")
+curve(dbinom(x = 105, size = (62+111), p = x), add=TRUE, col="yellow")
+curve(dbinom(x = 110, size = (62+111), p = x), add=TRUE, col="green")
+curve(dbinom(x = 115, size = (62+111), p = x), add=TRUE, col="blue")
+```
+
+
+Se considerarmos que a nossa amostragem é formada pelas quatro amostras conjuntamente e precisamos representar uma única curva:
+
+```{r}
+x  <-  seq(0,1, by=0.0001)
+y1 <-  dbinom(x = 100, size = (62+111), p = x)
+y2 <-  dbinom(x = 105, size = (62+111), p = x)
+y3 <-  dbinom(x = 110, size = (62+111), p = x)
+y4 <-  dbinom(x = 115, size = (62+111), p = x)
+y <- y1 * y2 * y3 * y4
+plot(x, y, type="l", ylab = "likelihood", xlab = expression(hat(pi)))
+```
+
+Como pode ver, com número de amostras maior, o valor da verossimilhança vai ficando em uma escala muito pequena (veja o eixo y), pois é composta pela multiplicação de frações (nesse exemplo: entre {`r range(c(y1, y2, y3, y4))`}). Por isso, é usada a função de verossimilhança logaritmizada (*log-likelihood*). Ao invés de procurarmos pelo *maior* valor de verossimilhança, procuraremos pelo valor *mais negativo* da *log-*verossimilhança.
+
+na verossimilhança temos que:
+
+$$2log(l_1/l_0) = 2[log(l_1)-log(l_0)] = 2(\mathcal{L}1-\mathcal{L}0)$$
+
+onde $l_0$ é a verossimilhança se o nosso $\hat{\theta}$ é igual a zero ($\hat{\theta}$) e $l_1$ é verossimilhança para o valor hipotetizado de $\hat{\theta}$. $\mathcal{L}0$ e $\mathcal{L}1$ são as log-verossimilhanças desses valores.
+
+A função *log-*verossimilhança é uma função de tratamento matemático simples e que resulta em valores numéricos de manipulação mais fácil.
+
+```{r}
+log.y <- - log(y)
+log.y2 <-  - (log(y1) + log(y2) + log(y3) + log(y4))
+plot(x, log.y, type = "l", col="red", xlab=expression(pi), ylab = "log-likelihood")
+lines(x, log.y2, col = "blue")
+```
+
+```{r}
+x[log.y==min(log.y)]
+```
+
+Dessa maneira, realizamos a estimativa de parâmetros, verificando qual é menor valor de *log-likelihood* seja para somente um valor ou para os coeficientes de um modelo, usando essa metodologia aplicada. Isto é, encontrar a estimativa dos parâmetros de um modelo que maximiza a função de verossimilhança ou, o que é equivalente, minimizar a função de log-verossimilhança negativa. O nome em inglês para isso é **MLE**: *Maximum Likelihood Estimates*.
+
+O R possui duas funções básicas para minimizar expressões matemáticas, ou seja, para buscar os valores dos parâmetros de uma função que resultam no menor valor da função:
+
+`optimize`: otimização unidimensional, isto é, para funções com apenas um parâmetro livre.
+`optim`: para otimização de funções com mais de um parâmetro livre.
+
+
+#### Exemplo: Fêmeas com satélites
+
+**1o Passo:** 
+Construir a função *logit*
+
+$$\hat{y} = \frac{1}{1 + e^{\beta_0+\beta_1*x}}$$
+
+Função de verossimilhança para uma função *logit*:
+
+```{r}
+invlogit <- function(x){
+  return(1 / (1 + exp(-x)))} # função logit
+
+log_veros.binom <- function(param, x, y){
+  prob = invlogit(param[1] + param[2]*x)  # Modelo da relação de que a prob. de satelite (y) tenha com width (x)
+  log_veros = dbinom(x = y,               # valor observado binomial (0 ou 1)
+                     prob = prob,         # probabilidade de ter ao menos um satelite
+                     size = 1,            # 1 fêmea
+                     log = TRUE)          # Assumindo que a prob de possuir um satelite é binomial
+  total = sum(log_veros, na.rm = TRUE)    # log_verossimilhanca minimo
+ return(total)
+}
+```
+
+**2o Passo**: 
+utilizar `optim` com a função construída acima:
+
+```{r}
+coeficientes <- optim(
+  c(1, 1),                 # chutes iniciais para os parâmetros
+  log_veros.binom ,        # função de log.verossimilhança construida acima
+  x = carang$width,        # valor de x da função 1/(1+exp(-x))
+  y = carang$y,            # valor de y da função
+  control = list(fnscale = -1)) # retornar o menor valor de verossimilhança
+```
+
+**3o Passo**:
+Veja os coeficientes (*parâmetros*) calculados por método de verossimilhança:
+
+```{r}
+coeficientes$par
+```
+
+Que é igual a :
+
+```{r}
+coef(glm(carang$y~carang$width, family = binomial))
+```
+
+Logo, o menor valor de verossimilhança foi encontrado com os parâmetros iguais a -12.359 e 0.497 para a relação entre `width` e `y`:
+
+```{r}
+log_veros.binom(coeficientes$par, x = carang$width, y = carang$y)
+```
+
+Se os parâmetros fossem, por exemplo, -11 e 0.5, o valor de log-verossimilhança seria diferente:
+
+```{r}
+log_veros.binom(c(-11,0.5), x = carang$width, y = carang$y)
+```
+
+Plotando a curva a partir dos coeficientes calculados:
+
+```{r}
+curve(invlogit(coeficientes$par[1]+coeficientes$par[2]*x), 
+      col="red", ylab = expression(hat(pi)), xlab = "Width fêmea")
+```
+
+A partir destas funções (`optim()` e `optimize()`) há várias outras funcções definidas especificamente para minimizar funções de verossimilhança. As duas mais usadas são a `mle` do pacote [stats4](https://www.rdocumentation.org/packages/stats4/versions/3.6.2), e a `mle2`, do pacote [bbmle](https://cran.r-project.org/web/packages/bbmle/index.html).
+
+Usaremos o pacote `bbmle`. 
+
+```{r}
+if(!require(bbmle)){install.packages("bbmle")}
+```
+
+A função que deve ser fornecida para a `mle2` é semelhante às funções apresentadas acima, mas nesse caso ela deve ser uma função que soma a log-verossimilhança negativa para cada valor dos parâmetros para todas observações na amostra. Portanto, o nosso exemplo ficaria assim:
+
+```{r}
+m1 <- bbmle::mle2(y ~ dbinom(prob = exp(beta0 + beta1*width )/
+                               (1 + exp(beta0 + beta1*width)), 
+                             size = 1),
+                  data = carang,
+                  start=list(beta0 = 0, beta1=0) )
+
+```
+
+```{r}
+m1
+```
+
+Para outras distribuições, passo aqui alguns exemplos:
+
+* Gaussiano
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dnorm( mean=a+b*x , sd=s ) ,
+           start=list( a=mean(y) , b=0 , s=sd(y) ) )
+```
+
+* Modelo binomial com um intercepto
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dbinom( prob=p , size=n ) , start=list(p=0.5) )
+```
+
+* Modelo binomial com covariável (logit)
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dbinom(prob=exp( a + b * x )/(1 +exp( a + b * x )) ,
+                       size=n ) , start=list(a=0,b=0) )
+```
+
+* Modelo Poisson com um intercepto
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dpois( lambda=p ) , start=list(p=mean(y)) )
+```
+
+* Modelo binomial com covariável
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dpois( lambda=a + b * x ) , start=list(a=mean(y),b=0) )
+```
+
+* Modelo negativa-binomial
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dnbinom( mu=m , size=n ) , start=list(mu=mean(y),n=1) )
+```
+
+* Modelo beta-binomial
+
+```{r, eval=FALSE}
+m <- mle2( y ~ dbetabinom(shape1= a , shape2 = b , size=n ) ,
+start=list(a=2, b=2) )
+```
+
+Estabelecendo intervalo de confiança para os valores de $\hat{y}$
+
+```{r}
+fit <- glm(y ~ width, family=binomial, data=carang)
+pred.prob <- fitted(fit) # ML fitted value estimate of P(Y=1)
+lp <- predict(fit, se.fit=TRUE) # linear predictor
+LB <- lp$fit - 1.96*lp$se.fit # confidence bounds for linear predictor
+UB <- lp$fit + 1.96*lp$se.fit # better: use qnorm(0.975) instead of 1.96
+LB.p <- exp(LB)/(1 + exp(LB)) # confidence bounds for P(Y=1)
+UB.p <- exp(UB)/(1 + exp(UB))
+head(cbind(carang$width, pred.prob, LB.p, UB.p))
+```
+
+Nesse exemplo:
+
+$$(\hat{\alpha}+\hat{\beta}x) \pm 1.96 \sqrt{var(\hat{\alpha})+x^2var(\hat{\beta})+2x[cov(\hat{\alpha},\hat{\beta})]}$$
+
+```{r}
+plot(jitter(y,0.1) ~ width, xlim=c(18,34), pch=16, ylab="Prob(satellite)", data=carang)
+data.plot <- data.frame(width=(18:34))
+lp <- predict(fit, newdata=data.plot, se.fit=TRUE)
+pred.prob <- exp(lp$fit)/(1 + exp(lp$fit))
+LB <- lp$fit - qnorm(0.975)*lp$se.fit
+UB <- lp$fit + qnorm(0.975)*lp$se.fit
+LB.p <- exp(LB)/(1 + exp(LB)); UB.p <- exp(UB)/(1 + exp(UB))
+lines(18:34, pred.prob)
+lines(18:34, LB.p, col="red"); lines(18:34, UB.p, col="blue")
+```
+
+## Exercício 3 - Separação perfeita
+
+Veja os dados a seguir e realize um modelo onde `y` é a VD e `x` é a VI:
+
+```{r}
+ x <- c(10, 20, 30, 40, 60, 70, 80, 90); y <- c(0, 0, 0, 0, 1, 1, 1, 1)
+```
+
+Construa o modelo *logit* e interprete o modelo.
+
+
+## Uso de variáveis *dummy*
+
+Ao invés de usar $X$ com uma variável contínua, utilizar uma variável categórica com $Y$ ainda sendo uma variável binomial (sim/não, 1/0).
+
+$$logit[P(Y=1)] = \alpha +\beta*x$$
+Onde $x$ é uma variável categórica.  
+
+### Exercício 4 - Admission
+
+Usando os dados de admissão em universidades nos EUA, onde:
+
+`admit` é uma variável binária (1: admitido, 0: Nao admitido).
+
+Duas variáveis contínuas: `gre` e `gpa` (notas dos estudantes)
+
+`rank`: valores de 1 a 4. Onde o aluno fez sua graduação, onde 1 são faculdades com prestígio alto, e 4 aquelas com menor prestígio. Deve ser uma variável fator
+
+```{r}
+dados <- read.csv("https://stats.idre.ucla.edu/stat/data/binary.csv")
+head(dados)
+dados$rank <- as.factor(dados$rank)
+```
+
+#### a)
+utilize as notas de `gre` para prever a admissão (`admit`) de um aluno através do método de verossimilhança de um modelo logit, conforme descrito acima. Interprete o modelo.
+
+
+#### b)
+utilize as notas de `gre` para prever a admissão (`admit`) de um aluno através do método de verossimilhança de um modelo logit, agora utilizando a função `glm()`.
+
+
+#### c)
+Faça um modelo utilizando todas as variáveis disponíveis para prever a admissão do estudante e interprete o modelo.
+
+
+
+# TO BE CONTINUED
+
+## Estimativa de tamanho amostral
+
+
+
+## Poder do teste 
+
+
+### Exercício 5
+
+```{r}
+Heart <- read.table("http://www.stat.ufl.edu/~aa/cat/data/Heart.dat",header=TRUE)
+glimpse(Heart)
+```
+
+ 
