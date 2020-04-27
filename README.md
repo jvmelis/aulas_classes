@@ -1,2 +1,2 @@
 # aulas_classes
-Aulas de Estatística Básica e Multivariada
+Aulas de Estatística - Mooca
