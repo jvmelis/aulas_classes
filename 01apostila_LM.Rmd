@@ -74,7 +74,7 @@ plot(modelo)
 
 O primeiro gráfico a esquerda mostra um padrão não ideal, onde não apresenta os resíduos com valores constantes em relação a $\hat{y}$ (`Fitted values`). Ou seja: **não é linear**!
 
-Para verificar a não linearidade, importate ver os seguintes pontos:
+Para verificar a não linearidade, importante ver os seguintes pontos:
   * 1. As variáveis tendem a apresentar relação linear ou não? Por exemplo: relação entre volume (que é cúbico) com área (que é quadrada);
   * 2. Veja o padrão da reta. Funcionalidade `car::crPlots(x)`, onde `x` é o modelo a ser testado.
   * 3. Verifique individualmente cada variável. Talvez alguma transformação dos dados seja necessária (ver [box-cox](https://www.statisticshowto.com/box-cox-transformation/)).
@@ -175,6 +175,7 @@ Assim como a normalidade dos resíduos:
 ```{r}
 shapiro.test(residuals(modelo))
 ```
+
 Como p-valor<0.05, estabelecemos que os resíduos **não seguem distribuição normal**.
 
 também pode ser realizado um teste de [Durbin-Watson](https://en.wikipedia.org/wiki/Durbin%E2%80%93Watson_statistic) para verificar se os resíduos são independentes, usando a função `car::durbinWatsonTest()` :
@@ -186,7 +187,9 @@ car::durbinWatsonTest(modelo)
 Onde:
 
 $$d =\frac{\sum_{i=2}^{n}(e_i-e_{i-1})}{\sum_{n}^{i=1}e_i^2 }$$
+
 Sendo que: 
+
 $H_0: \rho = 0$ e $H_1: \rho > 0$
 $e_i = y_i - \hat{y_i}$: erro do $i^{th}$ elemento.
 $d$ fica menor assim que a correlação serial aumenta.
@@ -451,25 +454,25 @@ sheep$Energy
 ```
 
 
-#### a) 
+#### a) Construir modelo
 Ajuste um modelo linear onde a variável resposta seja a necessidade diária de energia (`Energy`) em relação a variável peso do animal (`Weight`).
 
-#### b) 
+#### b) Plot
 Faça um gráfico de pontos com `Energy ~ Weight` colocando a linha do modelo ajustado.
 
-#### c)
+#### c) IC 95%
 Adicione um intervalo de confiança de 95% para os valores ajustados (podem ser linhas ou uma área) no gráfico.
 
-#### d)
+#### d) Interpretar modelo
 Interprete o modelo.
 
-#### e) 
+#### e) Pressupostos
 Quais pressupostos, se tiver, parecem ser violados? Explique.
 
-#### f)
+#### f) Mudando modelo
 Ajuste outro modelo linear, mas dessa vez utilizando os valores logaritmizados de `Energy` (`log(Energy)`) como variável resposta. Execute uma análise diagnóstica desse modelo e compare com o modelo linear anterior.
 
-#### g)
+#### g) Interpretar novo modelo
 Interprete esse último modelo linear ajustado.
 
 Fonte: [Dunn & Smyth, 2018](https://www.springer.com/gp/book/9781441901170)
@@ -599,7 +602,7 @@ Fonte: [SAS](https://blogs.sas.com/content/iml/2019/03/25/geometry-multivariate-
 
 Formalmente, a sua fórmula é:
 
-$$D_M(x) = \sqrt{(x-\mu)^TS^{-1}(x-\mu)}$$
+$$ D_M(x) = \sqrt{(x-\mu)^TS^{-1}(x-\mu)}$$
 
 Onde $S$ é a matriz de covariância para um vetor multivariado $x = (x_1,x_2,..., x_p)^T$ em um grupo de valores com média $\mu = (\mu_1, \mu_2,..., \mu_p,)^T$.
 
@@ -702,23 +705,20 @@ ggplot(Arrests, aes(checks))+
   facet_grid(colour~sex)
 ```
 
-
-#### a)
+#### a) Construir modelo
 Execute um modelo linear onde o valor a ser previsto (VD) seja `checks` (quantas vezes a pessoa foi presa), em relação a coloração da pele (`colour`) e sexo (`sex`).
 
-#### b)
+#### b) Interpretação
 Veja o `summary()` do modelo `fit` e interprete os coeficientes.
 
-#### c)
+#### c) Equação
 Escreva a equação de regressão.
 
-#### d)
+#### d) R2 e R2adj
 Quais são os valores de $R^2$ e $R_{adj}^2$ e o que eles dizem?
 
-#### e)
+#### e) Testes de significância
 Quais diferentes testes de significância que você pode realizar e o que eles podem te dizer?
-
-
 
 ### D. Indicadores de multicolinearidade 
 
@@ -738,7 +738,7 @@ $n$: número de observações e $p$: o número de parâmetros
 
 O denominador $\sum_{i=1}^{n}(y_i-\hat{\mu}_i)$ de $s^2$ é abreviado como a *Soma dos Quadrados dos Erros (SQE)* (ou *SSE* = *Sum of Squared Errors*, em inglês) e podemos também nos referir ao *"soma dos quadrados dos resíduos"* (*Residual Sum of Squares - RSS*).
 
-Podemos considerar que $TSS = SSR + SSE$, onde TSS: é soma dos quadrados totais, SSR: soma dos quadrados dado pelo modelo da regressão e SSE: a soma dos quadrados dos erros. Sendo assim, *SSE* seria o componente da variação de *y* que se encontra *"não explicado"*. A decomposição de $TSS =  SSR + SSE$ pode ser transcrita como:
+Podemos considerar que $TSS = SSR + SSE$, onde $TSS$: é soma dos quadrados totais, $SSR$: soma dos quadrados dado pelo modelo da regressão e $SSE$: a soma dos quadrados dos erros. Sendo assim, *SSE* seria o componente da variação de *y* que se encontra *"não explicado"*. A decomposição de $TSS =  SSR + SSE$ pode ser transcrita como:
 
 $$\sum_i(y_i - \overline{y})^2 = \sum_i(\hat{\mu} _i - \overline{y})^2 + \sum_i(y_i - \hat{\mu_i})^2$$
 
@@ -877,7 +877,7 @@ Os dados a seguir são os dados de Fertilidade e Indicadores socioeconômico da 
 `Catholic`	        % ‘catholic’ (as opposed to ‘protestant’).
 `Infant.Mortality`	live births who live less than 1 year
 
-#### a)
+#### a) O modelo inicial
 Interprete o modelo 
 
 ```{r}
@@ -888,7 +888,7 @@ summary(fit)
 ```
 
 
-#### b)
+#### b) Resíduos
 Analise graficamente os resíduos
 
 ```{r}
@@ -896,7 +896,7 @@ par(mfrow=c(2,2));
 plot(fit)
 ```
 
-#### c)
+#### c) Analisar VI
 Analise a correlação entre as variáveis. Há indícios de multicolinearidade?
 
 ```{r}
@@ -904,10 +904,10 @@ pairs(swiss, lower.panel=flines, upper.panel = fcor)
 car::vif(fit)
 ```
 
-#### d)
+#### d) Reescrever modelo
 Reescreva um novo modelo com menos Variáveis Independentes, justificando.
 
-#### e)
+#### e) Comparar modelos
 Analise os dois modelos usando `anova()`, `BIC()` e `AIC()` e conclua.
 
 ### E. Correlação Parcial e Semiparcial
@@ -1121,34 +1121,242 @@ colnames(ginastas) <- c("Pratica","Ansiedade","Desempenho")
 #write.csv2(ginastas, "ginastas.csv")
 ```
 
-Os dados a seguir foram fabricados por mim e estão disponíveis no meu [github](https://raw.githubusercontent.com/jvmelis/aulas_classes/master/ginastas.csv). Os dados são:
+Os dados a seguir foram **fabricados** por mim e estão disponíveis no meu [github](https://raw.githubusercontent.com/jvmelis/aulas_classes/master/ginastas.csv). Os dados são:
 `X`: número do atleta (numerados de 1 a 100)
-`Pratica`:
-`Ansiedade`
-`Desempenho`
+`Pratica`: Nota dada pelo *treinador* em relação a prática realizada pelo ginasta
+`Ansiedade`: Nota dada pelo *próprio ginasta* sobre seu sentimento de ansiedade.
+`Desempenho`: Nota dada pelos *juízes* sobre o desempenho do atleta.
+
+**Lembrando:** Esses dados são totalmente fictícios, não podendo ser utilizados para qualquer conclusão *científica*.
 
 ```{r}
 ginastas <- read.csv2("https://raw.githubusercontent.com/jvmelis/aulas_classes/master/ginastas.csv")
 head(ginastas)
 ```
 
-Dados
-a) 
+
+#### a) Modelo 
+
+Interprete o modelo
 
 ```{r}
 mod1 <- lm(Desempenho ~ Pratica+Ansiedade, ginastas)
 summary(mod1)
-car::vif(mod1)
 ```
 
+#### b) VIF e Tolerância
+Avalie o modelo quanto a Fator de Inflação da Variância e sua tolerância.
 
-# (TO BE CONTINUED...)
+#### c) Correlações parciais
+Verifique as correlações semiparciais das VI Pratica e Ansiedade. Conclua com o que você observou.
+
+#### d) Comparar modelos
+
+Utilize `AIC()` e `anova()` para comparar modelos que utilizem menos variáveis e conclua.
+
+
+#### Sobre ANOVA para comparar modelos
+
+Se tivermos dois modelos ($Modelo A$ e $Modelo B$), com diferentes parâmetros:
+
+$$Modelo A: y_A = \beta_0 + \beta_1x_1 + \beta_2x_2 +\beta_1x_3 \\
+Modelo B: y_B = \beta_0 + \beta_1x_1  [......] + \beta_3x_3$$
+
+
+Pode-se realizar uma comparação com `anova(ModeloA, ModeloB)`, que utilizará a Soma dos resíduos ao quadrado (`RSS <- sum(residuals(Modelo)^2)`) de cada modelo, com posterior diferenças entre os RSS ($SS = RSS_A - RSS_B$) e a diferença entre os graus de liberdade (DF) dos resíduos de ambos modelos (`DF = df.residual(ModeloA) - df.residual(ModeloB)`) mais o grau de liberdade para os resíduos do modelo *completo* (neste caso, `ModeloA`, portanto: `dfA <- df.residual(ModeloA)`) e realiza um teste F (`Fvalor <- (SS/DF)/(rssA/dfA)`), com p-valor relativo (`pf(q = Fvalor, df1 = DF, df2 = dfA, lower.tail= FALSE)`). A hipótese nula ($H_0$) desse teste é de que as variâncias dos resíduos de ambos modelos são iguais (ou seja, os modelos são iguais). Se observamos um valor de p-valor significativo para descartarmos $H_0$, assumimos a hipótese alternativa de que os modelos são diferentes.
 
 ### F. Modelo linear ponderado
 
-### Exercício 5 - crawl
+A regressão ponderada é um método que você pode usar quando a suposição de mínimos quadrados de variação constante nos resíduos for violada (heterocedasticidade). Com o peso correto, esse procedimento minimiza a soma dos resíduos quadrados ponderados para produzir resíduos com uma variação constante (homocedasticidade).
 
-UUm estudo de bebês levantou a hipótese de que os bebês demorariam mais para aprender a engatinhar nos meses mais frios, porque as roupas extras restringem seus movimentos. De 1988 a 1991, foram registradas a primeira idade de rastreamento dos bebês e a temperatura média mensal seis meses após o nascimento (quando "os bebês presumivelmente entram na janela de prontidão locomotora"; p. 72). Os pais relataram o mês do nascimento e a idade em que o bebê rastejou ou rastejou uma distância de quatro pés em um minuto. Os dados foram coletados no Centro de Estudos Infantis da Universidade de Denver em 208 meninos e 206 meninas e resumidos pelo mês do nascimento (Tabela 2; conjunto de dados: `crawl`).
+$$ Y = X\beta+\varepsilon$$
+onde: $\varepsilon$ assume distribuição multivariada normal com média do vetor **0** e uma matriz de variância-covariância não constante:
+
+$$
+\begin{array}
+{rrrr}
+\sigma_1^2 & 0 & ... & 0 \\
+0 & \sigma_2^2 & ... & 0 \\
+\vdots & \vdots & \ddots &  \vdots \\
+0 & 0 & ... & \sigma_n^2 \\
+\end{array}
+$$
+
+        IMPORTANTE: A regressão ponderada não é uma solução apropriada se a heterocedasticidade for causada por uma variável omitida.
+
+Quando definimos um peso, como por exemplo a variância recíproca de cada variância $\sigma_i^2$ ou $w_i=1/\sigma_i^2$, então essa matriz **W** terá em sua diagonal esses pesos:
+
+$$
+\begin{array}
+{rrrr}
+w_1^2 & 0 & ... & 0 \\
+0 & w_2^2 & ... & 0 \\
+\vdots & \vdots & \ddots &  \vdots \\
+0 & 0 & ... & w_n^2 \\
+\end{array}
+$$
+
+e o cálculo de nossos parâmetros será realizado pelo método de mínimos quadrados ponderados (*WLS: weighted least squares*):
+
+$$\hat{\beta}_{WLS} = \arg\min_{\beta}\sum_{i=1}^n\varepsilon^2 = (X^TWX)^{-1}X^TWY$$
+
+Considerando também que:
+
+$$S(\beta_0,\beta_1) = \sum_{i=1}^nw_i\varepsilon_i^2 =  \sum_{i=1}^nw_i(y_i-\hat{y}_i)^2 =  \sum_{i=1}^nw_i(y_i-\beta_0-\beta_ix_i)^2$$
+Onde $S$ deve ser a menor
+
+Com essa configuração, podemos fazer algumas observações:
+
+  * Como cada peso é inversamente proporcional à variação do erro, ele reflete as informações nessa observação. Portanto, uma observação com pequena variação de erro tem um grande peso, pois contém relativamente mais informações do que uma observação com grande variação de erro (pequeno peso).
+
+  * Os pesos devem ser conhecidos (ou mais geralmente estimados) até uma constante de proporcionalidade.
+
+
+#### Exemplo: Altura dos Pais de Galton 
+
+Os dados a seguir foram obtidos por Galton sobre a altura dos filhos de pais e mães inglesas (ver sobre os [dados](https://ytliu0.github.io/Stat390EF-R-Independent-Study-archive/RMarkdownExercises/Galton_solution.html))
+
+```{r}
+galton<-read.csv2("Galton.csv")
+galton$Parent <- (galton$Father+galton$Mother)/2
+galton$SD <-sqrt((galton$Parent-galton$Father)^2+(galton$Parent-galton$Mother)^2)
+head(galton)
+```
+
+Se formos calcular os parâmetros $\beta_0$ e $\beta_1$ *na mão*, teremos que:
+
+```{r}
+y <- galton$Height
+x <- galton$Parent
+x_medio <- mean(x)           # Media de x (Age)
+SSx <- sum((x - x_medio)^2)  # soma dos quadrados de X
+y_medio <- mean(y)           # Media de y (Weight)
+SSxy <- sum((x - x_medio)*y) 
+beta1 <- SSxy / SSx
+beta0 <- y_medio - beta1*x_medio
+y_hat <- beta0 + beta1*x
+RSS <- sum((y - y_hat )^2 )
+c( beta0 = beta0, beta1 = beta1, RSS = RSS )
+```
+
+Que pode ser realizado usando a função `lm()`
+
+```{r}
+mod0 <- lm(Height~Parent, galton)
+summary(mod0)
+```
+
+Mas quando fazemos o cálculo de `Height ~ Parent` levando em consideração a variância inflada pelo inverso da variância (`1/SD^2`) contrabalanceando (*ponderando*), teremos que o cálculo da média dos valores, realizando a ponderação ($\bar{x}_w$), é realizada da seguinte maneira (função R `weighted.mean(x, w)`)
+
+$$\bar{x}_w = \frac{\sum_{i=1}^nw_ix_i}{\sum_{i=1}^nw_i} $$
+E a soma dos resíduos ao quadrado deve ser:
+
+$$RSS = \sum_{i=1}^nw_i(y_i-\hat{y}_i)^2 $$
+
+Na Estatística, a ponderação de variância inversa ($1/sd^2$) é um método de agregar duas ou mais variáveis aleatórias para minimizar a variação da média ponderada. Cada variável aleatória é ponderada em proporção inversa à sua variância, ou seja, proporcional à sua precisão. Portanto, realizaremos esse método:
+
+```{r}
+wts <-  1/galton$SD^2                  # os pesos
+wts[is.infinite(wts)] <- 0             # colocando valores de 1/0 (Inf) igual a 0
+x_medio <- weighted.mean(x, w = wts)   # Media ponderada de x (Age) considerando wts (Births)
+SSx <- sum( wts*(x - x_medio)^2 )      # soma dos quadrados de x ponderando wts
+y_medio <- weighted.mean(y, w=wts)     # Media ponderada de y (Weight) considerando wts (Births) 
+SSxy <- sum( wts*(x - x_medio)*y )     # soma dos quadrados de xy ponderando wts
+beta1 <- SSxy / SSx                    # calculo de beta1 
+beta0 <- y_medio - beta1*x_medio       # calculo de beta0
+y_hat <- beta0 + beta1*x               # y chapeu
+RSS <- sum( wts*(y - y_hat)^2 )        # soma dos quadrados dos erros
+c( beta0=beta0, beta1=beta1, RSS=RSS ) # os parâmetros calculados
+```
+
+Que pode ser realizado usando a função `lm()`
+
+```{r}
+mod1 <- lm(Height~Parent, galton, weights=wts)
+summary(mod1)
+```
+
+Analisando os resíduos dos modelos, podemos ver que:
+
+```{r}
+par(mfrow=c(2,2))
+plot(mod0)
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(mod1)
+```
+
+
+Graficos
+
+```{r}
+par(mfrow=c(1,2))
+plot(Height~Parent, galton, main="Unweighted"); abline(a = coef(mod0)[1], b = coef(mod0)[2])
+plot(Height~Parent, galton, main="Weighted"); abline(a = coef(mod1)[1],   b = coef(mod1)[2])
+```
+
+Pela definição, $\sigma^2/w_i = var[y_i] = E[(y_i-\hat{y}_i)^2]$, e considerando que $RSS = w_i(y_i-\hat{y}_i)^2$. Porém, como o valor de $\hat{y}$ é estimado, estimamos a variância como $s^2$, sendo então:
+$$ s^2 = \frac{RSS}{n-2}$$
+
+```{r}
+df <- length(y) - 2
+s2 <- RSS / df
+c( df = df, s=sqrt(s2), s2=s2 )
+```
+
+
+Já o Erro padrão dos coeficientes é calculado conforme:
+
+$$\text{var}[\hat{\beta_0}] = \sigma^2\sqrt{\frac{1}{\sum{w_i}}+\frac{\bar{x}_w^2}{SS_x}} $$
+
+e
+
+$$\text{var}[\hat{\beta_1}] = \frac{\sigma^2}{SS_x}$$
+
+Podemos estabelecer que:
+
+$$\text{se}(\hat{\beta_0}) = s\sqrt{\frac{1}{\sum{w_i}}+\frac{\bar{x_w}^2 }{SS_x} } $$
+e
+
+$$\text{se}(\hat{\beta_1}) = \frac{s}{\sqrt{SS_x}} $$
+
+```{r}
+var_beta0 <- s2 * ( 1/sum(wts) + x_medio^2 / SSx )
+var_beta1 <- s2 / SSx
+sqrt( c( beta0=var_beta0, beta1=var_beta1) ) # The std errors
+```
+
+Para estimativa de $\hat{y}$ e erro padrão associado, estabelecemos que:
+$$ \text{var}[\hat{y}_{novo}] = \sigma^2\{\frac{1}{\sum{w_i}}+\frac{(x_{novo}-\bar{x})^2}{SS_x} \} $$
+
+Logo, um casal de pais altos (80)
+
+```{r}
+x_novo <- 80
+y_chapeu_novo <- beta0 + beta1*x_novo
+var_y_chapeu_novo <- s2 * ( 1/sum(wts) + (x_novo - x_medio)^2 / SSx )
+se_y_chapeu_novo <- sqrt(var_y_chapeu_novo)
+c( y_hat = y_chapeu_novo, se = sqrt(var_y_chapeu_novo))
+```
+```{r}
+predict.lm(mod1, data.frame(Parent=x_novo), se=T)
+```
+
+Determinar a correta ponderação é difícil. 
+Normalmente, observações com variações pequenas devem ter pesos relativamente grandes e observações com variações grandes devem ter pesos relativamente pequenos.
+
+Suponha que seu modelo de regressão preveja o número anual de acidentes de trânsito em diferentes cidades. Como cidades mais populosas tendem a sofrer mais acidentes, os resíduos de cidades maiores também tendem a ser maiores. Uma abordagem para resolver isso é usar o recíproco da população de cada cidade para o peso.
+
+A especificação de uma variável como peso (`weights`) afeta as somas dos quadrados e as estimativas de parâmetros das seguintes maneiras:
+  * As somas de quadrados tornam-se somas ponderadas de quadrados.
+  * Uma média ponderada é usada na soma total de quadrados.
+  * Um critério de mínimos quadrados ponderados é usado para estimar os parâmetros.
+
+### Exercício 6 - crawl
+
+Um estudo de bebês levantou a hipótese de que os bebês demorariam mais para aprender a engatinhar nos meses mais frios, porque as roupas extras restringem seus movimentos. De 1988 a 1991, foram registradas a primeira idade de rastreamento dos bebês e a temperatura média mensal seis meses após o nascimento (quando "os bebês presumivelmente entram na janela de prontidão locomotora"). Os pais relataram o mês do nascimento e a idade em que o bebê rastejou ou rastejou uma distância de quatro pés em um minuto. Os dados foram coletados no Centro de Estudos Infantis da Universidade de Denver em 208 meninos e 206 meninas e resumidos pelo mês do nascimento (Tabela a seguir; conjunto de dados: `crawl`, pacote `GLMsData`).
 
 ```{r}
 data("crawl")
@@ -1157,37 +1365,19 @@ crawl %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
 ```
 
+#### a) Análise Exploratório dos Dados 
+Plote os dados. Quais pressupostos, se houver, parecem violadas?
 
-#### a) Plote os dados. Quais pressupostos, se houver, parecem violadas?
+#### b) WLS
+Explique por que um modelo de regressão ponderado é apropriado para os dados.
 
+#### c) LM
+Ajuste um modelo de regressão linear ponderada aos dados e interprete os coeficientes de regressão.
 
-#### b) Explique por que um modelo de regressão ponderado é apropriado para os dados.
+#### d) Conclua
+Teste formalmente a hipótese proposta pelos pesquisadores.
 
-#### c) Ajuste um modelo de regressão linear ponderada aos dados e interprete os coeficientes de regressão.
-
-#### d) Teste formalmente a hipótese proposta pelos pesquisadores.
-
-#### e) Encontre um intervalo de confiança de 90% para a inclinação da linha ajustada e interprete
-
-
-Fonte: [Dunn & Smyth, 2018](https://www.springer.com/gp/book/9781441901170)
-
-### Exercício 6
-
-Numerosos estudos demonstraram uma associação entre a temperatura ambiente sazonal (em oC) e a pressão arterial (em mm Hg). Um estudo com 574 homens rurais ganenses com idades entre 18 e 65 anos estudou essa relação [9] (e também incluiu várias variáveis estranhas) usando um modelo de regressão linear, produzindo os resultados na Tabela 2.8.
-
-
-Calcule os valores P para cada termo no modelo e comente.
-2. Depois de ajustar a idade, a circunferência da cintura, o consumo de álcool e os hábitos de fumar, descreva a relação entre a temperatura ambiente e a pressão arterial sistólica.
-3. Traçar a linha que descreve a relação entre temperatura ambiente e pressão arterial sistólica em homens de 30 anos que não fumam, bebem álcool e têm uma circunferência da cintura de 100 cm.
-    
-    Os autores afirmam que as temperaturas médias diárias variam entre um mínimo médio de 20 ° C na estação chuvosa e um máximo médio de 40 ° C na estação seca. Na estação seca, as primeiras manhãs são geralmente frias e as tardes geralmente quentes, com temperaturas máximas diárias chegando a 45 ° C (p. 17).
- 
-Use essas informações para orientar sua escolha de valores de temperatura para sua plotagem.
-4. Calcule um intervalo de confiança de 95% para o parâmetro de regressão para a temperatura ambiente.
-5. Interprete a relação entre a temperatura ambiente e todas as variáveis na equação de regressão.
-6. Preveja a pressão arterial sistólica média para homens ganenses de 35 anos (que não fumam, bebem álcool e têm uma circunferência da cintura de 100 cm) quando a temperatura ambiente é de 30 ° C.
+#### e) IC 90%
+Encontre um intervalo de confiança de 90% para a inclinação da linha ajustada e interprete
 
 Fonte: [Dunn & Smyth, 2018](https://www.springer.com/gp/book/9781441901170)
-
-
